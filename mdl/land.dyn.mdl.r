@@ -17,6 +17,7 @@ land.dyn.mdl <- function(scn.name){
   source("mdl/fire.regime.r")
   source("mdl/post.fire.r")
   source("mdl/auxiliars.r")
+  source("mdl/update.vars.r")
   sourceCpp("mdl/is.in.cpp")
   
   ## Load global variables and customized scenario parameters
@@ -30,19 +31,8 @@ land.dyn.mdl <- function(scn.name){
       dir.create(file.path(getwd(), out.path, "/lyr"), showWarnings = F) 
   }
   
-  ## Load:
-  ## 1. Mask of the study area (raster)
-  ## 2. Data frame with cell.id and coordinates x, y
-  ## 3. Data frame of the model static variables 
-  ## 4. Data frame with the cell.id of the ignitions
-  load("inputlyrs/rdata/mask.rdata")
-  load("inputlyrs/rdata/coordinates.rdata")
-  load("inputlyrs/rdata/orography.rdata")
+  ## Load ignitions
   load("inputlyrs/rdata/ignitions.rdata")
-  
-  ## List the name of the forest species (9)
-  species <- c("phalepensis", "pnigra", "ppinea", "psylvestris", "qsuber", "qfaginea",  "qilex", 
-               "otherconif", "othertrees")
   
   ## Tracking data.frames
   track.fire <-  data.frame(run=NA, year=NA, fire.id=NA, fst=NA, wind=NA, atarget=NA, aburnt=NA)
@@ -52,17 +42,22 @@ land.dyn.mdl <- function(scn.name){
   ## Set up time sequence
   time.seq <- seq(1, time.horizon, 1)
   
-  
   ## Start the simulations   
-  irun <- 1
   for(irun in 1:nrun){
+  
+    ## Load:
+    ## 1. Mask of the study area (raster)
+    ## 2. Data frame with cell.id and coordinates x, y
+    ## 3. Data frame of the model static variables 
+    ## 4. Data frame with dynamic state variables
+    load("inputlyrs/rdata/mask.rdata")
+    load("inputlyrs/rdata/coordinates.rdata")
+    load("inputlyrs/rdata/orography.rdata")
+    load("inputlyrs/rdata/land.rdata")
     
     ## Schedule of fires and post-fire
     fire.schedule <- seq(1, time.horizon, 1)
     post.fire.schedule <- seq(1, time.horizon, 1)
-    
-    ## Load initial spatial dynamic state variables in a data.frame format
-    load("inputlyrs/rdata/land.rdata")
     
     ## Start the discrete time sequence 
     for(t in time.seq){  
@@ -72,11 +67,14 @@ land.dyn.mdl <- function(scn.name){
       
       ## UPDATE LAND
       if(t==12){
-        out <- update.state.vars(year=00)
+        out <- update.vars(year="00")
         land <- out[[1]]
         MASK <- out[[2]]
+        coord <- out[[3]]
+        orography <- out[[4]]
+        ignis <- out[[5]]
+        rm(out); gc(verbose=F)
       }
-      
       
       ## FIRES
       fire.out <- fire.regime(land, ignis, coord, orography, t)
@@ -94,9 +92,7 @@ land.dyn.mdl <- function(scn.name){
       fire.schedule <- fire.schedule[-1] 
       rm(fire.out)
       
-      
       ## POST-FIRE REGENERATION
-      ## Forest transition of tree species burnt in high intensity
       if(length(burnt.cells)>0){
         aux  <- post.fire(land, coord, orography, burnt.cells)
         spp.out <- land$spp[land$cell.id %in% aux$cell.id]
@@ -105,13 +101,11 @@ land.dyn.mdl <- function(scn.name){
       }
       post.fire.schedule <- post.fire.schedule[-1] 
       
-      
       ## AGING
       land$tsdist[land$cell.id %in% burnt.cells] <- 0
       land$tsdist <- pmin(land$tsdist+1,600)
       
-      
-      ## Print maps every time step with ignition and low/high intenstiy burnt
+      ## Print maps of fire.id in burnt locations
       if(write.sp.outputs){
         cat("... writing output layers", "\n")
         MAP <- MASK
@@ -130,7 +124,7 @@ land.dyn.mdl <- function(scn.name){
   } # run
   
   cat("... writing outputs", "\n")
-  track.fire$rem <- pmax(0,track.fire$atarget-track.fire$aburnt)
+  track.fire$extra <- track.fire$atarget-track.fire$aburnt
   write.table(track.fire[-1,], paste0(out.path, "/Fires.txt"), quote=F, row.names=F, sep="\t")
     # write.table(track.fire.spp[-1,], paste0(out.path, "/FiresSpp.txt"), quote=F, row.names=F, sep="\t")
   names(track.post.fire)[4:5] <- c("spp.in", "ha")

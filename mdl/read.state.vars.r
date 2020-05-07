@@ -34,27 +34,3 @@ read.state.vars <- function(year){
 }
 
 
-update.state.vars <- function(year){
-  
-  library(raster)
-  
-  cat("Updating state variables", "\n")
-  
-  work.path <- getwd()
-  
-  ## Read initial state varsas
-  LCF <- raster(paste0(work.path, "/inputlyrs/asc/ForestMapSpp", year, "_31N-ETRS89.asc"))
-  TSDIST <- raster(paste0(work.path, "/inputlyrs/asc/TimeSinceFire", year, "_31N-ETRS89.asc"))
-  
-  ## Build data frame
-  land <- data.frame(cell.id=1:ncell(LCF), spp=LCF[], tsdist=TSDIST[])
-  land <- land[!is.na(land$spp),]
-  
-  ## MASK of the study area
-  MASK <- LCF
-  MASK[!is.na(MASK[])] <- 1
-  crs(MASK) <- CRS("+init=epsg:25831")
-  
-  return(list(land=land, MASK=MASK))
-  
-}

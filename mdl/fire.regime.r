@@ -108,7 +108,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
                           slope = wslope * pmax(pmin(dif.elev/dist,0.5),-0.5)+0.5, 
                           wind = wwind * (ifelse(abs(windir-fire.wind)>180, 
                                             360-abs(windir-fire.wind), abs(windir-fire.wind)))/180) %>% 
-                   mutate(sr=slope+wind+flam+aspc, pb=1+rpb*log(sr*fuel)) %>%
+                   mutate(sr=slope+wind+flam+aspc, pb=1+rpb*log(sr*fuel))  %>%
                    group_by(cell.id) %>% 
                    summarize(fire.id=id, spp=mean(spp), sr=max(sr), pb=max(pb)) 
       
@@ -119,7 +119,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
       visit.cells <- c(visit.cells, sprd.rate$cell.id)
       
       ## If at least there's a burning cell, continue, otherwise, stop
-      if(!any(sprd.rate$burning))
+      if(nrow(sprd.rate)==0)
         break
       
       ## Mark the burnt cells and the fire intensity 
