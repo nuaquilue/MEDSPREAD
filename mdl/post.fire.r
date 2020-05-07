@@ -2,7 +2,7 @@
 ##
 ######################################################################################
 
-post.fire <- function(land, coord, orography){
+post.fire <- function(land, coord, orography, burnt.cells){
   
   ## Tracking
   cat("Post-fire regeneration", "\n") 
@@ -24,13 +24,14 @@ post.fire <- function(land, coord, orography){
   ## - it doesn't regenerate per se (fire functional trait), or
   ## - it is out of its climatic range, or
   ## - it is younger than the regeneration age
-  burnt.cells <- filter(land, spp<14 & tsdist==0) %>% left_join(response.trait, by="spp") %>%
-                 left_join(spp.ages, by="spp") %>% filter(age<=regener | trait==0) %>% left_join(coord, by = "cell.id") 
+  burnt.land <- filter(land, cell.id %in% burnt.cells & spp<9) %>% left_join(response.trait, by="spp") %>%
+                 left_join(spp.ages, by="spp") %>% filter(tsdist<=regener | trait==0) %>% 
+                 left_join(coord, by = "cell.id") 
   
   ## Only continue if there's any cell with change of spp dominance
-  if(nrow(burnt.cells)>0){
+  if(nrow(burnt.land)>0){
     ## Coordinates of their closest neighbours (do not count for the cell itself)
-    neigh.id <- nn2(coord[,-1], select(burnt.cells,x,y),  searchtype="priority", k=nneigh[spp.distrib.rad])
+    neigh.id <- nn2(coord[,-1], select(burnt.land,x,y),  searchtype="priority", k=nneigh[spp.distrib.rad])
     neigh.id <- neigh.id$nn.idx
     neigh.spp <- data.frame(cell.id=coord$cell.id[neigh.id[,1]],
                             matrix(land$spp[neigh.id[,-1]], nrow=nrow(neigh.id), ncol=ncol(neigh.id)-1) )
@@ -38,26 +39,24 @@ post.fire <- function(land, coord, orography){
     ## Count number of neighbors per spp, assume that always there's a shrub cell in the neighbourhood
     neigh.spp <- data.frame(cell.id=coord$cell.id[neigh.id[,1]],
                             t(apply(neigh.spp[,-1], 1, count.spp))>=1 )
-    neigh.spp$X14 <- T
+    neigh.spp$X10 <- T
     
     ## For those cells that a transition must be done:
     ## Look up sqi data and sencondary species  (according to dominant spp and sqi), 
     ## then add sdm of all tree species and finally
     ## add the number of forest spp in the neighbourhood
-    burnt.cells <- left_join(burnt.cells, secondary.spp, by = c("spp", "sqi")) %>% left_join(sdm, by = "cell.id") %>% 
+    burnt.land <- left_join(burnt.land, secondary.spp, by="spp") %>% 
                    left_join(neigh.spp, by = "cell.id")
   
     ## Select spp among available
-    new.cohort <- data.frame(cell.id=burnt.cells$cell.id,
-                             spp=apply(select(burnt.cells, phalepensis:shrub) * 
-                                         select(burnt.cells, sdm.phalepensis:sdm.shrub) * 
-                                         select(burnt.cells, X1:X14), 1, select.cohort), 
-                             biom=0, sdm=1, age=1)
+    new.cohort <- data.frame(cell.id=burnt.land$cell.id,
+                             spp=apply(select(burnt.land, phalepensis:shrub) * 
+                                        select(burnt.land, X1:X10), 1, select.cohort) )
     
-    return(select(new.cohort, -temp, -precip))  
+    return(new.cohort)  
   }
   
   else
-    return(burnt.cells)
+    return(numeric())
 }
 

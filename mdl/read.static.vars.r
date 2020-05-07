@@ -1,58 +1,37 @@
 ######################################################################################
-## Build 5 .rdata with
-## 1. Raster MASK of the study area 
+## Build 3 .rdata with
+## 1. Ignitions
 ## 2. Coordinates of the study area
 ## 3. Orographic variables
-## 4. UTM grid as a data frame
-## 5. Fire regime related variables
 ######################################################################################
 
-read.static.vars <- function(work.path){
+read.static.vars <- function(){
   
   library(raster)
-  library(RANN)
   library(tidyverse)
   
-  cat("Reading orographyic, utm, fire regime variables, harvesting-restrictions", "\n")
+  cat("Read coordinates, orography and ignitions", "\n")
   
-  ## MASK of the study area
-  MASK <- raster(paste0(work.path, "/inputlyrs/asc/LCFspp_100m_31N-ETRS89.asc"))
-  MASK[!is.na(MASK[])] <- 1
-  crs(MASK) <- CRS("+init=epsg:25831")
-  save(MASK, file="inputlyrs/rdata/mask.rdata") 
-  
-  ## Build a coordinates data frame and then load model static variables in a data.frame format
+  ## Build a coordinates data frame from MASK raster
+  load("inputlyrs/rdata/mask.rdata")
   coord <- data.frame(cell.id=1:ncell(MASK), coordinates(MASK), mask=MASK[])
   coord <- filter(coord, !is.na(mask)) %>% select(-mask)
   save(coord, file="inputlyrs/rdata/coordinates.rdata") 
   
-  ## Read initial state vars,  build and save the data frame
-  ELEVATION <- raster(paste0(work.path, "/inputlyrs/asc/DEM_100m_31N-ETRS89.asc"))
-  ASPECT <- raster(paste0(work.path, "/inputlyrs/asc/Aspect_100m_31N-ETRS89.asc"))
-  SLOPE <- raster(paste0(work.path, "/inputlyrs/asc/SlopeDegree_100m_31N-ETRS89.asc"))
-  ROAD <- raster(paste0(work.path, "/inputlyrs/asc/DensRoad_100m_31N-ETRS89.asc"))
-  ROAD[is.na(ROAD[])] <- 0  ## why there are so many NA is ROAD layer?
-  orography <- data.frame(cell.id=1:ncell(MASK), elev=ELEVATION[], aspect=ASPECT[], slope=SLOPE[], road=ROAD[])
+  ## Read orography variables, build and save the data frame
+  ELEVATION <- raster("inputlyrs/asc/DEM_100m_31N-ETRS89.asc")
+  ASPECT <- raster("inputlyrs/asc/Aspect_100m_31N-ETRS89.asc")
+  orography <- data.frame(cell.id=1:ncell(MASK), elev=ELEVATION[], aspect=ASPECT[])
   orography <- orography[!is.na(MASK[]),]
+  orography$elev[is.na(orography$elev)] <- rnorm(sum(is.na(orography$elev)),
+                                                 mean(orography$elev, na.rm=T), sd(orography$elev, na.rm=T))
+  orography$aspect[is.na(orography$aspect)] <- sample(1:4, sum(is.na(orography$aspect)), replace=T)
   save(orography, file="inputlyrs/rdata/orography.rdata")
   
-  ## UTM layer
-  UTM <- raster(paste0(work.path, "/inputlyrs/asc/UTM1k_100m_31N-ETRS89.asc"))
-  ## Are there NAs in the UTM layer within CAT?
-  dta <- data.frame(cell.id=1:ncell(UTM), m=MASK[], coordinates(UTM), z=UTM[]) %>% filter(!is.na(m))
-  na.var <- filter(dta, is.na(z))
-  for(id in na.var$cell.id){
-    neighs <- nn2(select(dta, x, y), filter(na.var, cell.id==id)%>% select(x,y), 
-                  searchtype="priority", k=9)
-    phago <- mean(dta$z[neighs$nn.idx], na.rm=T)
-    if(!is.na(phago))
-      na.var$z[na.var$cell.id==id] <- phago
-  }
-  na.var2 <- filter(na.var, is.na(z))
-  dta$z[is.na(dta$z)] <- na.var$z
-  UTM[!is.na(MASK[])] <- dta$z
-  utm <- data.frame(cell.id=1:ncell(UTM),  utm=UTM[])
-  save(utm, file="inputlyrs/rdata/utm.rdata")
+  ## Read ignitions, build and save the data frame
+  IGNIS <- raster("inputlyrs/asc/FireIgnis8912_31N-ETRS89.asc")
+  ignis <- data.frame(cell.id=1:ncell(MASK), fire.id=IGNIS[])
+  ignis <- ignis[!is.na(MASK[]),]
+  save(ignis, file="inputlyrs/rdata/ignitions.rdata")
+  
 }
-
-

@@ -7,21 +7,54 @@
 ## Type of last disturbance
 ######################################################################################
 
-read.state.vars <- function(work.path){
+read.state.vars <- function(year){
   
   library(raster)
   
-  cat("Reading initial state variables", "\n")
+  cat("Read state variables", "\n")
   
   ## Read initial state varsas
-  LCF <- raster(paste0(work.path, "/inputlyrs/asc/LCFspp_100m_31N-ETRS89.asc"))
-  TSDIST <- raster(paste0(work.path, "/inputlyrs/asc/TSDisturb_100m_31N-ETRS89.asc"))
+  LCF <- raster(paste0("inputlyrs/asc/ForestMapSpp", year, "_31N-ETRS89.asc"))
+  TSDIST <- raster(paste0("inputlyrs/asc/TimeSinceFire", year, "_31N-ETRS89.asc"))
+  
+  ## Build data frame
+  land <- data.frame(cell.id=1:ncell(LCF), spp=LCF[], tsdist=TSDIST[])
+  land <- land[!is.na(land$spp),]
+  land$tsdist[is.na(land$tsdist)] <- 200
+  
+  ## Save it
+  save(land, file="inputlyrs/rdata/land.rdata")
+  
+  ## MASK of the study area
+  MASK <- LCF
+  MASK[!is.na(MASK[])] <- 1
+  crs(MASK) <- CRS("+init=epsg:25831")
+  save(MASK, file="inputlyrs/rdata/mask.rdata") 
+  
+}
+
+
+update.state.vars <- function(year){
+  
+  library(raster)
+  
+  cat("Updating state variables", "\n")
+  
+  work.path <- getwd()
+  
+  ## Read initial state varsas
+  LCF <- raster(paste0(work.path, "/inputlyrs/asc/ForestMapSpp", year, "_31N-ETRS89.asc"))
+  TSDIST <- raster(paste0(work.path, "/inputlyrs/asc/TimeSinceFire", year, "_31N-ETRS89.asc"))
   
   ## Build data frame
   land <- data.frame(cell.id=1:ncell(LCF), spp=LCF[], tsdist=TSDIST[])
   land <- land[!is.na(land$spp),]
   
-  ## Save it
-  save(land, file="inputlyrs/rdata/land.rdata")
-   
+  ## MASK of the study area
+  MASK <- LCF
+  MASK[!is.na(MASK[])] <- 1
+  crs(MASK) <- CRS("+init=epsg:25831")
+  
+  return(list(land=land, MASK=MASK))
+  
 }

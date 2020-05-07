@@ -20,8 +20,8 @@ define.scenario <- function(scn.name){
   ## Output directory (do not never change that, please!)
   out.path <- paste0("outputs/", scn.name)
   
-  ## Time lenght (in years) of a model simulation, from 2010 to 2100
-  time.horizon <- 91
+  ## Time lenght (in years) of a model simulation, from 1989 to 2012 both inclusive
+  time.horizon <- 24
   
   ## Number of runs (i.e. replicas)
   nrun <- 5
@@ -29,17 +29,13 @@ define.scenario <- function(scn.name){
   ## Flags to write spatial and tabular output data
   write.sp.outputs <- TRUE
   
-  ## Global model's parametres
   # Radius of the neighborhood (in pixels) to find out if a species is present in a region
   spp.distrib.rad <- 20 	# i.e. 2 km
-  # Radius of the neighborhood (in pixels) to look for mature tree species ready to colonize shrubs
-  shrub.colon.rad <- 5 		# i.e. 500 m
-
+  
   ## Fire parameters (should not change to much): Spread rate, burn probability, prescribed burns
   rpb <- 1
   pb.upper.th <- 0.75
   pb.lower.th <- 0.05
-  fire.intens.th <- 0.35  # high vs. low intensity fire, sr <= fire.intens.th
   file.sprd.weight <- "SprdRateWeights"
   
   ## Save all the variables in .r file to be further loaded by landscape.dyn.r
