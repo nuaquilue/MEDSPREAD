@@ -47,7 +47,7 @@ land.dyn.mdl <- function(scn.name){
     ## 2. Data frame with cell.id and coordinates x, y
     ## 3. Data frame of the model static variables 
     ## 4. Data frame with dynamic state variables
-    load("inputlyrs/rdata/mask.rdata")
+    load("inputlyrs/rdata/mask.89-99.rdata")
     load("inputlyrs/rdata/coordinates.rdata")
     load("inputlyrs/rdata/orography.rdata")
     load("inputlyrs/rdata/land.rdata")
@@ -64,12 +64,12 @@ land.dyn.mdl <- function(scn.name){
       
       ## UPDATE LAND
       if(t==12){
-        out <- update.vars(year="00")
+        load("inputlyrs/rdata/mask.00-12.rdata")
+        out <- update.vars(year="00", MASK)
         land <- out[[1]]
-        MASK <- out[[2]]
-        coord <- out[[3]]
-        orography <- out[[4]]
-        ignis <- out[[5]]
+        coord <- out[[2]]
+        orography <- out[[3]]
+        ignis <- out[[4]]
         rm(out); gc(verbose=F)
       }
       
