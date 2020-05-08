@@ -28,13 +28,14 @@ read.static.vars()
 
 ############################################ SENSITIVITY ANALYSIS ##################################################
 rm(list=ls())
+library(raster)
 library(tidyverse)
 # Load functions
 source("mdl/define.scenario.r")
 source("mdl/land.dyn.mdl.r")
 wfactors <- read.table("scenarios/wfactors.txt", header=T)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-rpb <- 0.1
+rpb <- 0.2
 for(i in 1:286){
   scn.name <- paste0("Test", rpb*10, id.scn[i])
   ## Change weights of spread factors
