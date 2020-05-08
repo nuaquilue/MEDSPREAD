@@ -37,15 +37,15 @@ fire.regime <- function(land, ignis, coord, orography, t){
   
   ## Start burning the fires of the current time step
   burnt.cells <- visit.cells <- fire.ids <- numeric()
-  for(id in ids){
+  for(i in ids){
     
     ## cell.id of the ignition point
-    igni.id <- unlist(filter(ignis, fire.id==id) %>% select(cell.id))
+    igni.id <- unlist(filter(ignis, id==i) %>% select(cell.id))
     
     ## Get the target area, the fire spread type and the wind direction
-    fire.size.target <- unlist(filter(fire.ignis, fire.id==id) %>% select(area))
-    fire.spread.type <- unlist(filter(fire.ignis, fire.id==id) %>% select(fst))
-    fire.wind <- unlist(filter(fire.ignis, fire.id==id) %>% select(wind))
+    fire.size.target <- unlist(filter(fire.ignis, fire.id==i) %>% select(area))
+    fire.spread.type <- unlist(filter(fire.ignis, fire.id==i) %>% select(fst))
+    fire.wind <- unlist(filter(fire.ignis, fire.id==i) %>% select(wind))
       
     ## According to the fire spread type, look at the weights of each factor on spread rate,
     ## and the species flammability
@@ -61,7 +61,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
     aburnt <- 1
     burnt.cells <- c(burnt.cells, igni.id)
     visit.cells <- c(visit.cells, igni.id) # to account for visit (and burnt) cells 
-    fire.ids <- c(fire.ids, id)
+    fire.ids <- c(fire.ids, i)
       
     ## Start speading from active cells (i.e. the fire front)
     while(aburnt<fire.size.target){
@@ -108,9 +108,9 @@ fire.regime <- function(land, ignis, coord, orography, t){
                           slope = wslope * pmax(pmin(dif.elev/dist,0.5),-0.5)+0.5, 
                           wind = wwind * (ifelse(abs(windir-fire.wind)>180, 
                                             360-abs(windir-fire.wind), abs(windir-fire.wind)))/180) %>% 
-                   mutate(sr=slope+wind+flam+aspc, pb=1+rpb*log(sr*fuel))  %>%
+                   mutate(sr=slope+wind+flam+aspc, pb=1+rpb*log(sr*fuel))   %>%
                    group_by(cell.id) %>% 
-                   summarize(fire.id=id, spp=mean(spp), sr=max(sr), pb=max(pb)) 
+                   summarize(fire.id=i, spp=mean(spp), sr=max(sr), pb=max(pb)) 
       
       ## Now compute actual burning state (T or F) according to pb and suppress:
       sprd.rate$burning <- (runif(nrow(sprd.rate),0,pb.upper.th)<=sprd.rate$pb & sprd.rate$pb>pb.lower.th)
@@ -143,10 +143,10 @@ fire.regime <- function(land, ignis, coord, orography, t){
     } # while 'fire.size.target'
     
     ## Write info about this fire
-    track.fire <- rbind(track.fire, data.frame(year=t, fire.id=id, fst=fire.spread.type, 
+    track.fire <- rbind(track.fire, data.frame(year=t, fire.id=i, fst=fire.spread.type, 
                                                wind=fire.wind, atarget=fire.size.target, aburnt))
     
-    cat(paste("Fire:", id, "- aTarget:", fire.size.target, "- aBurnt:", aburnt), "\n")
+    cat(paste("Fire:", i, "- aTarget:", fire.size.target, "- aBurnt:", aburnt), "\n")
     
   }  # for 'ids'
   

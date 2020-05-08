@@ -30,7 +30,7 @@ read.static.vars <- function(){
   
   ## Read ignitions, build and save the data frame
   IGNIS <- raster("inputlyrs/asc/FireIgnis8912_31N-ETRS89.asc")
-  ignis <- data.frame(cell.id=1:ncell(MASK), fire.id=IGNIS[])
+  ignis <- data.frame(cell.id=1:ncell(MASK), id=IGNIS[])
   ignis <- ignis[!is.na(MASK[]),]
   save(ignis, file="inputlyrs/rdata/ignitions.rdata")
   

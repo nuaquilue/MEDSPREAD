@@ -34,7 +34,6 @@ land.dyn.mdl <- function(scn.name){
   
   ## Tracking data.frames
   track.fire <-  data.frame(run=NA, year=NA, fire.id=NA, fst=NA, wind=NA, atarget=NA, aburnt=NA)
-      # track.fire.spp <-  data.frame(run=NA, year=NA, fire.id=NA, spp=NA, aburnt=NA)
   track.post.fire <- data.frame(run=NA, year=NA, spp.out=NA, Var2=NA, Freq=NA)
   
   ## Set up time sequence

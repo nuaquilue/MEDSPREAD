@@ -8,7 +8,7 @@ define.scenario(scn.name)
 # Change target parameters
 nrun <- 10
 rpb <- 0.4
-file.sprd.weight <- "SprdRateWeights"
+file.sprd.weight <- "WeightSprdFactors"
 # Write the name of the customized parameters in the dump function. 
 # It copies these R objects into the file outputs/test/scn.custom.def.r
 dump(c("nrun", "rpb", "file.sprd.weight"), paste0("outputs/", scn.name, "/scn.custom.def.r"))
