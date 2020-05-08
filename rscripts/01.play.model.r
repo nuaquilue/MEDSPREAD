@@ -28,6 +28,7 @@ read.static.vars()
 
 ############################################ SENSITIVITY ANALYSIS ##################################################
 rm(list=ls())
+library(tidyverse)
 # Load functions
 source("mdl/define.scenario.r")
 source("mdl/land.dyn.mdl.r")

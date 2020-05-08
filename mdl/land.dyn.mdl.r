@@ -6,8 +6,6 @@ land.dyn.mdl <- function(scn.name){
   
   ## Load required packages and functions 
   suppressPackageStartupMessages({
-    library(tictoc)
-    library(sp)
     library(raster)  
     library(RANN)
     library(Rcpp)
