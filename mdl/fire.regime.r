@@ -12,7 +12,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
   
   ## Read and load input data
   fire.ignis <- read.table("inputfiles/FireIgnitions.txt", header=T)
-  spp.flammability <- read.table("inputfiles/SppSpreadRate.txt", header=T)
+  spp.flammability <- read.table("inputfiles/SppFlammability.txt", header=T)
   fst.sprd.weight <- read.table(paste0("inputfiles/", file.sprd.weight, ".txt"), header=T)
   
   ## To be sure that non-burnable covers do not burn (water, rock, urban)

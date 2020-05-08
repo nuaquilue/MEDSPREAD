@@ -24,7 +24,7 @@ define.scenario <- function(scn.name){
   time.horizon <- 24
   
   ## Number of runs (i.e. replicas)
-  nrun <- 5
+  nrun <- 10
   
   ## Flags to write spatial and tabular output data
   write.sp.outputs <- TRUE
@@ -34,8 +34,8 @@ define.scenario <- function(scn.name){
   
   ## Fire parameters (should not change to much): Spread rate, burn probability, prescribed burns
   rpb <- 1
-  pb.upper.th <- 0.75
-  pb.lower.th <- 0.05
+  pb.upper.th <- 0.85
+  pb.lower.th <- 0.25
   file.sprd.weight <- "SprdRateWeights"
   
   ## Save all the variables in .r file to be further loaded by landscape.dyn.r
