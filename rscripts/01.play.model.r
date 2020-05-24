@@ -35,8 +35,8 @@ source("mdl/define.scenario.r")
 source("mdl/land.dyn.mdl.r")
 wfactors <- read.table("scenarios/wfactors.txt", header=T)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-rpb <- 0.2
-for(i in 1:286){
+nrun <- 3; rpb <- 0.9
+for(i in 206:232){
   scn.name <- paste0("Test", rpb*10, id.scn[i])
   ## Change weights of spread factors
   x <- unlist(filter(wfactors, scn==i) %>% select(-scn))
@@ -44,7 +44,7 @@ for(i in 1:286){
   write.table(sprdw, paste0("inputfiles/WeightSprdFactors_", rpb*10, id.scn[i], ".txt"), quote=F, sep="\t", row.names=F)
   define.scenario(scn.name)
   file.sprd.weight <- paste0("WeightSprdFactors_", rpb*10, id.scn[i])
-  dump(c("rpb", "file.sprd.weight"), paste0("outputs/", scn.name, "/scn.custom.def.r"))
+  dump(c("nrun", "rpb", "file.sprd.weight"), paste0("outputs/", scn.name, "/scn.custom.def.r"))
   land.dyn.mdl(scn.name)
 }
 
