@@ -7,7 +7,8 @@ nscn <- 205
 result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
 for(i in 1:nscn){  
   scn.name <- paste0("Test", rpb*10, id.scn[i])
-  for(r in 1:3){
+  scn.name <- "Test001"
+  for(r in 1:1){
     load("inputlyrs/rdata/mask.89-99.rdata")
     load("inputlyrs/rdata/fireperim.89-99.rdata")
     for(y in 1:11){
@@ -45,13 +46,76 @@ report.fire <- left_join(result, fire.ignis, by=c("fire.id", "year")) %>%
                mutate(pctg=am/area*100) %>% group_by(scn, year, fire.id, area, fst) %>% 
                summarise(pctg=round(mean(pctg),1), am=round(mean(am),1))
 write.table(report.fire, paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), quote=F, row.names=F, sep="\t")
+
+
+
+## SEE ALL SCN TOGETHER
+rm(list=ls())
+`%notin%` <- Negate(`%in%`)
+rpb <- 0.1
+report.fire <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
+for(rpb in seq(0.2,0.8,0.1)){
+  a <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
+  print(nrow(a))
+  report.fire <- rbind(report.fire,a)
+}
             
 ## Pctg of area match per scenario and fire.spread.type
 report.scn <- group_by(report.fire, scn, fst) %>% 
-              summarise(min.match=min(pctg), mn.match=round(mean(pctg),1), max.match=max(pctg))
-write.table(report.scn, paste0("rscripts/outs/ReportAreaMatchScn_0", rpb*10, ".txt"), quote=F, row.names=F, sep="\t")
+              summarise(min.match=min(pctg), mn.match=mean(pctg), 
+                        md.match=median(pctg), max.match=max(pctg))
+# write.table(report.scn, "rscripts/outs/ReportAreaMatchScn.txt", quote=F, row.names=F, sep="\t")
 
 ## Best scn per fire spread type
-scn.names <- paste0("Test", rpb*10, id.scn)
-group_by(report.scn, fst) %>% summarise(best=which.max(mn.match)) %>%
-    mutate(scn=scn.names[best])
+scn.names <- unique(report.scn$scn)
+# wind
+md.fst <- filter(report.scn, fst==1) %>% group_by(fst) %>% summarise(median=max(md.match))
+filter(report.scn, fst==1, md.match==md.fst$median)
+# topo
+md.fst <- filter(report.scn, fst==2) %>% group_by(fst) %>% summarise(median=max(md.match))
+filter(report.scn, fst==2, md.match==md.fst$median)
+# conv
+md.fst <- filter(report.scn, fst==3) %>% group_by(fst) %>% summarise(median=max(md.match))
+filter(report.scn, fst==3, md.match==md.fst$median)
+
+
+## TOPOGRAPHIC FIRES
+type <- 2
+## Let's find fires with very low rate of matching
+topo <- filter(report.fire, fst==type) %>% group_by(fire.id) %>% summarize(n=sum(pctg<5))
+topo[order(topo$n, decreasing = T),]
+## Remove a few fires and repeat searching the best
+less.fires <- filter(report.fire, scn %notin% c(266,475), fst==type)
+report.scn <- group_by(less.fires, scn, fst) %>% 
+              summarise(min.match=min(pctg), mn.match=mean(pctg), 
+                        md.match=median(pctg), max.match=max(pctg))
+md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
+filter(report.scn, fst==type, md.match==md.fst$median)
+
+
+## CONVECTIVE FIRES
+type <- 3
+convec <- filter(report.fire, fst==type) %>% group_by(fire.id) %>% summarize(n=sum(pctg<5))
+convec[order(convec$n, decreasing = T),]
+less.fires <- filter(report.fire, scn %notin% c(259, 1232, 218, 221, 2154, 2152, 213, 634), fst==type)
+report.scn <- group_by(less.fires, scn, fst) %>% 
+              summarise(min.match=min(pctg), mn.match=mean(pctg), 
+              md.match=median(pctg), max.match=max(pctg))
+md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
+filter(report.scn, fst==type, md.match==md.fst$median)
+
+
+## WIND FIRES
+type <- 1
+wind <- filter(report.fire, fst==type) %>% group_by(fire.id) %>% summarize(n=sum(pctg<5))
+wind[order(wind$n, decreasing = T),]
+less.fires <- filter(report.fire, scn %notin% c(2014, 2263, 2302, 2300, 2235, 2310, 2214, 2145, 2205, 230), fst==type)
+report.scn <- group_by(less.fires, scn, fst) %>% 
+              summarise(min.match=min(pctg), mn.match=mean(pctg), 
+                        md.match=median(pctg), max.match=max(pctg))
+md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
+filter(report.scn, fst==type, md.match==md.fst$median)
+
+
+## FIRE SPREAD RATE
+track.sprd <- read.table("outputs/Test4283/FiresSprd.txt", header=T)

@@ -1,0 +1,14 @@
+species	medfire_II	medspread
+phalepensis	1	1
+pnigra	2	2
+ppinea	3	3
+psylvestris	4	4
+ppinaster	5	
+puncinata	6	8
+aalba	7	
+qilex	8	7
+qsuber	9	5
+qfaginea	10	6
+qhumilis	11	
+fsylvatica	12	
+other	13	9

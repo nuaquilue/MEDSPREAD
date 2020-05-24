@@ -1,0 +1,17 @@
+spp	species
+1	phalepensis
+2	pnigra
+3	ppinea
+4	psilvestris
+5	qsuber
+6	qfaginea
+7	qilex
+8	otherconif
+9	othertrees
+10	shrub
+11	grass
+12	crop
+13	orchard
+14	soil
+15	water
+16	urban 

@@ -14,6 +14,8 @@ fire.regime <- function(land, ignis, coord, orography, t){
   fire.ignis <- read.table("inputfiles/FireIgnitions.txt", header=T)
   spp.flammability <- read.table("inputfiles/SppFlammability.txt", header=T)
   fst.sprd.weight <- read.table(paste0("inputfiles/", file.sprd.weight, ".txt"), header=T)
+  spp.ages <- read.table("inputfiles/SppAges.txt", header=T)
+  shrub.fuel <- read.table("inputfiles/ShrubFuel.txt", header=T)
   
   ## To be sure that non-burnable covers do not burn (water, rock, urban)
   i <- land$spp<=13        # 3.043.317
@@ -22,6 +24,8 @@ fire.regime <- function(land, ignis, coord, orography, t){
   
   ## Reset TrackFires data frame each run 
   track.fire <- data.frame(year=NA, fire.id=NA, fst=NA, wind=NA, atarget=NA, aburnt=NA)
+  track.sprd <- data.frame(year=NA, fire.id=NA, step=NA, cell.id=NA, slope=NA, wind=NA,
+                           flam=NA, aspc=NA, fuel=NA, sr=NA, pb=NA, pbfi=NA, burn=NA, burnfi=NA)
   
   ## Wind direction between 12 neigbours
   ## Wind direction is coded as 0-N, 45-NE, 90-E, 135-SE, 180-S, 225-SW, 270-W, 315-NE
@@ -30,10 +34,22 @@ fire.regime <- function(land, ignis, coord, orography, t){
                               dist=c(100,100,100,100,141.421,141.421,141.421,141.421,200,200,200,200))
   default.nneigh <- nrow(default.neigh)
   
+  ## Fuel
+  aux <- left_join(subland, spp.ages, by="spp") %>% 
+         mutate(fuel=ifelse(spp %in% c(11,12,13), 0.2,
+                       ifelse(spp==10, 1,
+                          ifelse(tsdist<=7, 0.2,
+                              ifelse(tsdist<young, 0.4, 0.95)))))
+  aux2 <- filter(aux, spp==10, tsdist<=24) %>% select(-fuel) %>%
+          left_join(shrub.fuel, by="tsdist")
+  aux$fuel[aux$cell.id %in% aux2$cell.id] <- aux2$fuel
+  subland$fuel <- aux$fuel
+  rm(aux); rm(aux2)
+  
   ## Fire ids
   ids <- unlist(filter(fire.ignis, year==t) %>% select(fire.id))
   if(is_empty(ids))
-    return(list(burnt.cells=numeric(), fire.ids=numeric(), track.fire=track.fire[-1,]))
+    return(list(burnt.cells=numeric(), fire.ids=numeric(), track.fire=track.fire[-1,], track.sprd=track.sprd[-1,]))
   
   ## Start burning the fires of the current time step
   burnt.cells <- visit.cells <- fire.ids <- numeric()
@@ -41,6 +57,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
     
     ## cell.id of the ignition point
     igni.id <- unlist(filter(ignis, id==i) %>% select(cell.id))
+    step=1
     
     ## Get the target area, the fire spread type and the wind direction
     fire.size.target <- unlist(filter(fire.ignis, fire.id==i) %>% select(area))
@@ -54,6 +71,12 @@ fire.regime <- function(land, ignis, coord, orography, t){
     wflam <- fst.sprd.weight[3,fire.spread.type+1]
     waspc <- fst.sprd.weight[4,fire.spread.type+1]
     spp.flam <- filter(spp.flammability, fst==fire.spread.type) %>% select(-fst)
+    if(fire.spread.type==1)
+      rpb <- rpb.wind
+    if(fire.spread.type==2)
+      rpb <- rpb.topo
+    if(fire.spread.type==3)
+      rpb <- rpb.conv
     
     ## Initialize tracking variables
     ## Ignition always burnt, and it does in high intensity when no-PB
@@ -83,7 +106,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
       
       ## For all neighbours, compute fire intenstiy and flammability factors
       ## fire intenstiy and flam will be NA for non burnable covers
-      neigh.land <- subland[i.land.in.neigh,] %>% mutate(fuel=1) %>%
+      neigh.land <- subland[i.land.in.neigh,] %>% 
                     left_join(spp.flam, by="spp") %>% mutate(flam=wflam*flam) 
       
       ## Now, add to i.land.in.neigh, the indexes (positions) of fire.front cells.
@@ -108,12 +131,21 @@ fire.regime <- function(land, ignis, coord, orography, t){
                           slope = wslope * pmax(pmin(dif.elev/dist,0.5),-0.5)+0.5, 
                           wind = wwind * (ifelse(abs(windir-fire.wind)>180, 
                                             360-abs(windir-fire.wind), abs(windir-fire.wind)))/180) %>% 
-                   mutate(sr=slope+wind+flam+aspc, pb=1+rpb*log(sr*fuel))   %>%
-                   group_by(cell.id) %>% 
-                   summarize(fire.id=i, spp=mean(spp), sr=max(sr), pb=max(pb)) 
+                   mutate(sr=slope+wind+flam+aspc, pb=1+rpb*log(sr), pbfi=1+rpb*log(sr*fuel)) %>% group_by(cell.id) %>% 
+                   summarize(fire.id=i, slope=max(slope), wind=max(wind), flam=max(flam),
+                             aspc=max(aspc), fuel=max(fuel), sr=max(sr), pb=max(pb), pbfi=max(pbfi)) 
       
       ## Now compute actual burning state (T or F) according to pb and suppress:
-      sprd.rate$burning <- (runif(nrow(sprd.rate),0,pb.upper.th)<=sprd.rate$pb & sprd.rate$pb>pb.lower.th)
+      x <- runif(nrow(sprd.rate),0,pb.upper.th)
+      sprd.rate$burn <- x<=sprd.rate$pb & sprd.rate$pb>pb.lower.th
+      sprd.rate$burnfi <- x<=sprd.rate$pbfi & sprd.rate$pbfi>pb.lower.th
+      if(nrow(sprd.rate)>0)
+      track.sprd <- rbind(track.sprd,
+                          data.frame(year=t, fire.id=i, step=step, cell.id=sprd.rate$cell.id,
+                                     slope=sprd.rate$slope, wind=sprd.rate$wind, flam=sprd.rate$flam, 
+                                     aspc=sprd.rate$aspc, fuel=sprd.rate$fuel, sr=sprd.rate$sr, 
+                                     pb=sprd.rate$pb, pbfi=sprd.rate$pbfi, burn=sprd.rate$burn, burnfi=sprd.rate$burnfi))
+      
       
       ## Mark that all these neighs have been visited (before breaking in case no burning)
       visit.cells <- c(visit.cells, sprd.rate$cell.id)
@@ -123,23 +155,24 @@ fire.regime <- function(land, ignis, coord, orography, t){
         break
       
       ## Mark the burnt cells and the fire intensity 
-      burnt.cells <- c(burnt.cells, sprd.rate$cell.id[sprd.rate$burning])
-      fire.ids <- c(fire.ids, sprd.rate$fire.id[sprd.rate$burning])
+      burnt.cells <- c(burnt.cells, sprd.rate$cell.id[sprd.rate$burnfi])
+      fire.ids <- c(fire.ids, sprd.rate$fire.id[sprd.rate$burnfi])
       
       ## Select the new fire front
       exclude.th <- min(max(sprd.rate$sr)-0.005,   ## 'mad' -> median absolute deviation
-                        rnorm(1,mean(sprd.rate$sr[sprd.rate$burning], na.rm=T)-mad(sprd.rate$sr[sprd.rate$burning], na.rm=T)/2,
-                              mad(sprd.rate$sr[sprd.rate$burning], na.rm=T)))
-      fire.front <- sprd.rate$cell.id[sprd.rate$burning & sprd.rate$sr>=exclude.th]
+                        rnorm(1,mean(sprd.rate$sr[sprd.rate$burnfi], na.rm=T)-mad(sprd.rate$sr[sprd.rate$burnfi]/2, na.rm=T),
+                              mad(sprd.rate$sr[sprd.rate$burnfi], na.rm=T)))
+      fire.front <- sprd.rate$cell.id[sprd.rate$burnfi & sprd.rate$sr>=exclude.th]
       
       ## Increase area burnt in either high or low intensity (Prescribed burns always burnt in low intensity)
-      aburnt <- aburnt + sum(sprd.rate$burning)
+      aburnt <- aburnt + sum(sprd.rate$burnfi)
       
       ## In the case, there are no cells in the fire front, stop trying to burn.
       ## This happens when no cells have burnt in the current spreading step
       if(length(fire.front)==0)
         break
       
+      step=step+1
     } # while 'fire.size.target'
     
     ## Write info about this fire
@@ -150,6 +183,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
     
   }  # for 'ids'
   
-  return(list(burnt.cells=burnt.cells, fire.ids=fire.ids, track.fire=track.fire[-1,]))
+  return(list(burnt.cells=burnt.cells, fire.ids=fire.ids, track.fire=track.fire[-1,],
+         track.sprd=track.sprd[-1,]))
 }
 

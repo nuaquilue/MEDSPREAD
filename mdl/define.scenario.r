@@ -33,7 +33,7 @@ define.scenario <- function(scn.name){
   spp.distrib.rad <- 20 	# i.e. 2 km
   
   ## Fire parameters (should not change to much): Spread rate, burn probability, prescribed burns
-  rpb <- 1
+  rpb.wind <- rpb.topo <- rpb.conv <- 1
   pb.upper.th <- 0.85
   pb.lower.th <- 0.25
   file.sprd.weight <- "SprdRateWeights"
