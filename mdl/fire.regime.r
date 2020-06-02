@@ -45,6 +45,8 @@ fire.regime <- function(land, ignis, coord, orography, t){
   aux$fuel[aux$cell.id %in% aux2$cell.id] <- aux2$fuel
   subland$fuel <- aux$fuel
   rm(aux); rm(aux2)
+  # if(any(is.na(subland$fuel)))
+  #   print(filter(subland, is.na(fuel)))
   
   ## Fire ids
   ids <- unlist(filter(fire.ignis, year==t) %>% select(fire.id))
@@ -149,6 +151,15 @@ fire.regime <- function(land, ignis, coord, orography, t){
       
       ## Mark that all these neighs have been visited (before breaking in case no burning)
       visit.cells <- c(visit.cells, sprd.rate$cell.id)
+      
+      ## Avoid fire overshooting at last iteration: Only burn cells with higher pb
+      temp.burnt <- sprd.rate[sprd.rate$burnfi, c("cell.id", "pbfi")]
+      if(aburnt+nrow(temp.burnt)>fire.size.target){
+        max.burnt <- fire.size.target - aburnt
+        temp.burnt <- temp.burnt[order(temp.burnt$pbfi, decreasing = TRUE),]
+        def.burnt <- temp.burnt$cell.id[1:max.burnt]
+        sprd.rate$burnfi <- (sprd.rate$cell.id %in% def.burnt)
+      }
       
       ## If at least there's a burning cell, continue, otherwise, stop
       if(nrow(sprd.rate)==0)

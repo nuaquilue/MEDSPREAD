@@ -11,6 +11,7 @@ update.vars <- function(year, MASK){
   ## Build data frame
   land <- data.frame(cell.id=1:ncell(LCF), spp=LCF[], tsdist=TSDIST[])
   land <- land[!is.na(land$spp),]
+  land$tsdist[is.na(land$tsdist)] <- 200
   
   ## Build a coordinates data frame from MASK raster
   coord <- data.frame(cell.id=1:ncell(MASK), coordinates(MASK), mask=MASK[])

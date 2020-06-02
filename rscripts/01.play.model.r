@@ -3,15 +3,16 @@ rm(list=ls())
 # Load functions
 source("mdl/define.scenario.r")
 source("mdl/land.dyn.mdl.r")  
-scn.name <- "Test003"
+scn.name <- "Test004"
 define.scenario(scn.name)
 # Change target parameters
 nrun <- 1
 rpb.wind <- 0.3; rpb.topo <- 0.1; rpb.conv <- 0.4
 file.sprd.weight <- "WeightSprdFactors"
+write.sp.outputs <- F
 # Write the name of the customized parameters in the dump function. 
 # It copies these R objects into the file outputs/test/scn.custom.def.r
-dump(c("nrun", "rpb.wind", "rpb.topo", "rpb.conv", "file.sprd.weight"), 
+dump(c("nrun", "rpb.wind", "rpb.topo", "rpb.conv", "file.sprd.weight", "write.sp.outputs"), 
      paste0("outputs/", scn.name, "/scn.custom.def.r"))
 # Run the model
 land.dyn.mdl(scn.name)
