@@ -82,8 +82,8 @@ land.dyn.mdl <- function(scn.name){
       if(nrow(fire.out[[3]])>0)
         track.fire <- rbind(track.fire, data.frame(run=irun, fire.out[[3]]))
       # track fire.spread
-      if(nrow(fire.out[[4]])>0)
-        track.sprd<- rbind(track.sprd, data.frame(run=irun, fire.out[[4]]))
+      # if(nrow(fire.out[[4]])>0)
+      #   track.sprd<- rbind(track.sprd, data.frame(run=irun, fire.out[[4]]))
         # # track spp burnt
         # aux <- data.frame(cell.id=burnt.cells, fire.id=fire.ids) %>% 
         #        left_join(select(land, cell.id, spp), by="cell.id") %>%
