@@ -2,13 +2,12 @@ rm(list=ls())
 library(raster)
 library(tidyverse)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-rpb <- 0.9
-nscn <- 205
+rpb <- 0.2
+nscn <- 286
 result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
-for(i in 1:nscn){  
+for(i in 221:nscn){  
   scn.name <- paste0("Test", rpb*10, id.scn[i])
-  scn.name <- "Test001"
-  for(r in 1:1){
+  for(r in 1:3){
     load("inputlyrs/rdata/mask.89-99.rdata")
     load("inputlyrs/rdata/fireperim.89-99.rdata")
     for(y in 1:11){
@@ -38,7 +37,6 @@ for(i in 1:nscn){
   }
 }
 result <- result[-1,]
-
 
 ## Pctg of area match per fire and scenario
 fire.ignis <- read.table("inputfiles/FireIgnitions.txt", header=T)
