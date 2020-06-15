@@ -20,11 +20,10 @@ post.fire <- function(land, coord, orography, burnt.cells){
   ## The num of pixels is sequentially: 3+1*2, 5+3*2+1*2, 7+5*2+3*2+1*2, ...
   nneigh <- seq(3,41,2) + cumsum(seq(1,40,2)*2)
 
-  ## Coordinates of high-intensity burnt forest cells the current time step that
-  ## - it doesn't regenerate per se (fire functional trait), or
-  ## - it is out of its climatic range, or
+  ## Coordinates of forest cells burnt in high intensity the current time step that
+  ## - it doesn't regenerate per se (fire functional trait = 0), or
   ## - it is younger than the regeneration age
-  burnt.land <- filter(land, cell.id %in% burnt.cells & spp<9) %>% left_join(response.trait, by="spp") %>%
+  burnt.land <- filter(land, cell.id %in% burnt.cells & spp<=9) %>% left_join(response.trait, by="spp") %>%
                  left_join(spp.ages, by="spp") %>% filter(tsdist<=regener | trait==0) %>% 
                  left_join(coord, by = "cell.id") 
   

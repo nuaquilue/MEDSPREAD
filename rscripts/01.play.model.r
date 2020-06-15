@@ -38,7 +38,7 @@ source("mdl/define.scenario.r")
 source("mdl/land.dyn.mdl.r")
 wfactors <- read.table("scenarios/wfactors.txt", header=T)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-nrun <- 3; rpb <- rpb.wind <- rpb.topo <- rpb.conv <- 0.6
+nrun <- 3; rpb <- rpb.wind <- rpb.topo <- rpb.conv <- 0.9
 for(i in 221:286){
   scn.name <- paste0("Test", rpb*10, id.scn[i])
   ## Change weights of spread factors

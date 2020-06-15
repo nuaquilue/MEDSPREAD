@@ -97,13 +97,16 @@ land.dyn.mdl <- function(scn.name){
       ## POST-FIRE REGENERATION
       if(length(burnt.cells)>0){
         aux  <- post.fire(land, coord, orography, burnt.cells)
-        spp.out <- land$spp[land$cell.id %in% aux$cell.id]
-        land$spp[land$cell.id %in% aux$cell.id] <- aux$spp
-        track.post.fire <- rbind(track.post.fire, data.frame(run=irun, year=t, table(spp.out, aux$spp)))  
+        if(!is.atomic(aux)){
+          spp.out <- land$spp[land$cell.id %in% aux$cell.id]
+          land$spp[land$cell.id %in% aux$cell.id] <- aux$spp
+          track.post.fire <- rbind(track.post.fire, data.frame(run=irun, year=t, table(spp.out, aux$spp)))  
+        }
       }
       post.fire.schedule <- post.fire.schedule[-1] 
       
       ## AGING
+      cat("Aging", "\n")
       land$tsdist[land$cell.id %in% burnt.cells] <- 0
       land$tsdist <- pmin(land$tsdist+1,600)
       
