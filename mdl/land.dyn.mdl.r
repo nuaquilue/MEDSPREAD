@@ -6,6 +6,7 @@ land.dyn.mdl <- function(scn.name){
   
   ## Load required packages and functions 
   suppressPackageStartupMessages({
+    library(assertthat)
     library(raster)  
     library(RANN)
     library(Rcpp)
@@ -36,8 +37,8 @@ land.dyn.mdl <- function(scn.name){
   track.fire <-  data.frame(run=NA, year=NA, fire.id=NA, fst=NA, wind=NA, atarget=NA, aburnt=NA)
   track.post.fire <- data.frame(run=NA, year=NA, spp.out=NA, Var2=NA, Freq=NA)
   track.sprd <- data.frame(run=NA, year=NA, fire.id=NA, step=NA, cell.id=NA, slope=NA, wind=NA,
-                           flam=NA, aspc=NA, fuel=NA, sr=NA, pb=NA, pbfi=NA, burn=NA, burnfi=NA)
-  
+                           flam=NA, aspc=NA, fuel=NA, sr=NA, fi=NA, pb=NA, burn=NA)
+
   ## Set up time sequence
   time.seq <- seq(1, time.horizon, 1)
   
@@ -82,15 +83,15 @@ land.dyn.mdl <- function(scn.name){
       if(nrow(fire.out[[3]])>0)
         track.fire <- rbind(track.fire, data.frame(run=irun, fire.out[[3]]))
       # track fire.spread
-      # if(nrow(fire.out[[4]])>0)
-      #   track.sprd<- rbind(track.sprd, data.frame(run=irun, fire.out[[4]]))
-        # # track spp burnt
-        # aux <- data.frame(cell.id=burnt.cells, fire.id=fire.ids) %>% 
-        #        left_join(select(land, cell.id, spp), by="cell.id") %>%
-        #        group_by(fire.id, spp) %>% summarize(aburnt=length(spp))
-        # if(nrow(aux)>0)
-        #   track.fire.spp <-  rbind(track.fire.spp, data.frame(run=irun, year=t, aux)) 
-      # Done with fires! 
+      if(nrow(fire.out[[4]])>0)
+        track.sprd<- rbind(track.sprd, data.frame(run=irun, fire.out[[4]]))
+              # # track spp burnt
+              # aux <- data.frame(cell.id=burnt.cells, fire.id=fire.ids) %>%
+              #        left_join(select(land, cell.id, spp), by="cell.id") %>%
+              #        group_by(fire.id, spp) %>% summarize(aburnt=length(spp))
+              # if(nrow(aux)>0)
+              #   track.fire.spp <-  rbind(track.fire.spp, data.frame(run=irun, year=t, aux))
+      # Done with fires!
       fire.schedule <- fire.schedule[-1] 
       rm(fire.out)
       
@@ -111,7 +112,7 @@ land.dyn.mdl <- function(scn.name){
       land$tsdist <- pmin(land$tsdist+1,600)
       
       ## Print maps of fire.id in burnt locations
-      if(write.sp.outputs){
+      if(write.sp.outputs & length(burnt.cells)>0){
         cat("... writing output layers", "\n")
         MAP <- MASK
         aux <- data.frame(cell.id=burnt.cells, fire.id=fire.ids)

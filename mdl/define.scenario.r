@@ -29,14 +29,17 @@ define.scenario <- function(scn.name){
   ## Flags to write spatial and tabular output data
   write.sp.outputs <- TRUE
   
-  # Radius of the neighborhood (in pixels) to find out if a species is present in a region
+  ## File of fire ignitions
+  file.fire.ignis <- "FireIgnitions"
+  
+  ## Radius of the neighborhood (in pixels) to find out if a species is present in a region
   spp.distrib.rad <- 20 	# i.e. 2 km
   
   ## Fire parameters (should not change to much): Spread rate, burn probability, prescribed burns
-  rpb.wind <- rpb.topo <- rpb.conv <- 1
   pb.upper.th <- 0.85
   pb.lower.th <- 0.25
-  file.sprd.weight <- "SprdRateWeights"
+  fi.accelerate <- 1
+  file.sprd.weight <- "WeightSprdFactors"
   
   ## Save all the variables in .r file to be further loaded by landscape.dyn.r
   if(!file.exists(out.path))

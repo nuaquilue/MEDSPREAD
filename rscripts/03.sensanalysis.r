@@ -2,7 +2,7 @@ rm(list=ls())
 library(raster)
 library(tidyverse)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-rpb <- 0.2
+rpb <- 0.7
 nscn <- 286
 result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
 for(i in 221:nscn){  
@@ -49,10 +49,11 @@ write.table(report.fire, paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, "
 
 ## SEE ALL SCN TOGETHER
 rm(list=ls())
+library(tidyverse)
 `%notin%` <- Negate(`%in%`)
 rpb <- 0.1
 report.fire <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
-for(rpb in seq(0.2,0.8,0.1)){
+for(rpb in seq(0.2,0.9,0.1)){
   a <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
   print(nrow(a))
   report.fire <- rbind(report.fire,a)
