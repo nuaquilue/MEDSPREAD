@@ -13,6 +13,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
   ## Read and load input data
   fire.ignis <- read.table(paste0("inputfiles/", file.fire.ignis, ".txt"), header=T)
   spp.flammability <- read.table("inputfiles/SppFlammability.txt", header=T)
+  spp.flammability.large <- read.table("inputfiles/SppFlammabilityLarge.txt", header=T)
   fst.sprd.weight <- read.table(paste0("inputfiles/", file.sprd.weight, ".txt"), header=T)
   spp.ages <- read.table("inputfiles/SppAges.txt", header=T)
   shrub.fuel <- read.table("inputfiles/ShrubFuel.txt", header=T)
@@ -73,8 +74,11 @@ fire.regime <- function(land, ignis, coord, orography, t){
     wslope <- fst.sprd.weight[3,fire.spread.type+1]
     wflam <- fst.sprd.weight[4,fire.spread.type+1]
     waspc <- fst.sprd.weight[5,fire.spread.type+1]
-    spp.flam <- filter(spp.flammability, fst==fire.spread.type) %>% select(-fst)
-    fi.acc <- ifelse(fire.size.target>4000, fi.accelerate, 1)
+    if(fire.size.target>2000)
+      spp.flam <- filter(spp.flammability.large, fst==fire.spread.type) %>% select(-fst)
+    else
+      spp.flam <- filter(spp.flammability, fst==fire.spread.type) %>% select(-fst)
+    fi.acc <- ifelse(fire.size.target>2000, fi.accelerate, 1)
     
     ## Initialize tracking variables
     ## Ignition always burnt, and it does in high intensity when no-PB
@@ -170,13 +174,17 @@ fire.regime <- function(land, ignis, coord, orography, t){
       ## If any cell has burnt in the current step, stop
       if(nburn==0)
         break
-      ## Otherwise, select the new fire front, a random number from 1 to n.cell.burnt according to fire.intensity
+      ## Otherwise, select the new fire front, a random number from 1 to n.cell.burnt 
+      ## according to fire.intensity
       if(nburn==1)
         fire.front <- sprd.rate$cell.id[sprd.rate$burn]
-      if(nburn>1)
-        fire.front <- base::sample(sprd.rate$cell.id[sprd.rate$burn], rdunif(1,1, round(nburn*3/4)),
-                             replace=F, prob=sprd.rate$fi[sprd.rate$burn]*runif(nburn, 0.65, 1))  
-      
+      if(nburn>1){
+        if(fire.size.target>2000 & aburnt/fire.size.target<=0.75)
+          fire.front <- sprd.rate$cell.id[sprd.rate$burn]
+        else  
+          fire.front <- base::sample(sprd.rate$cell.id[sprd.rate$burn], rdunif(1, 1, round(nburn*3/4)),
+                              replace=F, prob=sprd.rate$fi[sprd.rate$burn]*runif(nburn, 0.65, 1))  
+      }
             # exclude.th <- min(max(sprd.rate$sr)-0.005,   ## 'mad' -> median absolute deviation
             #                   rnorm(1,mean(sprd.rate$sr[sprd.rate$burn], na.rm=T)-mad(sprd.rate$sr[sprd.rate$burn]/2, na.rm=T),
             #                         mad(sprd.rate$sr[sprd.rate$burn], na.rm=T)))

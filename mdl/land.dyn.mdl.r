@@ -131,6 +131,7 @@ land.dyn.mdl <- function(scn.name){
   
   cat("... writing outputs", "\n")
   track.fire$extra <- track.fire$atarget-track.fire$aburnt
+  track.fire$pextra <- round(track.fire$extra/track.fire$atarget*100,1)
   write.table(track.fire[-1,], paste0(out.path, "/Fires.txt"), quote=F, row.names=F, sep="\t")
   write.table(track.sprd[-1,], paste0(out.path, "/FiresSprd.txt"), quote=F, row.names=F, sep="\t")
   names(track.post.fire)[4:5] <- c("spp.in", "ha")
