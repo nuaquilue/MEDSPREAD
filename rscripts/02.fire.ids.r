@@ -15,6 +15,8 @@ for(y in 1989:1999){
   crs(FIREIDed50) <- CRS("+init=epsg:23031")
   FIREIDetrs <- projectRaster(FIREIDed50, res=100, crs=CRS("+init=epsg:25831"), method="ngb")
   FIREID <- crop(FIREIDetrs, FIREIDed50, snap="near")
+  writeRaster(FIREID, paste0("c:/work/MEDMOD/InputLayers_MEDSPREAD/Fires8912_31N-ETRS89/FiresID", y),
+              format="GTiff", overwrite=T)
   ## Filter ignis of the current year
   ids <- unique(FIREID[])[-(1:2)]
   ignis.y <- filter(ignis, id %in% ids)
@@ -42,6 +44,8 @@ for(y in 2000:2012){
   crs(FIREIDed50) <- CRS("+init=epsg:23031")
   FIREIDetrs <- projectRaster(FIREIDed50, res=100, crs=CRS("+init=epsg:25831"), method="ngb")
   FIREID <- crop(FIREIDetrs, FIREIDed50, snap="near")
+  writeRaster(FIREID, paste0("c:/work/MEDMOD/InputLayers_MEDSPREAD/Fires8912_31N-ETRS89/FiresID", y),
+              format="GTiff", overwrite=T)
   ## Filter ignis of the current year
   ids <- unique(FIREID[])[-(1:2)]
   ignis.y <- filter(ignis, id %in% ids)

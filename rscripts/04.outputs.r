@@ -2,10 +2,21 @@ library(raster)
 library(viridis)
 library(tidyverse)
 rm(list=ls())
-scn.name <- "TestAll01"
+scn.name <- "TestAll16"
 fires <- read.table(paste0("outputs/", scn.name, "/Fires.txt"), header=T)
 fires$pextra <- round(fires$extra/fires$atarget*100,1)
-group_by(fires, fst) %>% summarize(p=sum(extra)/sum(atarget)*100)
+group_by(fires, fst) %>% summarize(p=round(sum(extra)/sum(atarget)*100,1))
+
+
+## in medfire
+scn.name <- "Scn_FireShape01sp"
+fires <- read.table(paste0("C:/WORK/MEDMOD/SpatialModelsR/MEDFIRE/outputs/", scn.name, "/Fires.txt"), header=T)
+fires$prem <- round(fires$rem/fires$atarget*100,1)
+group_by(fires, fst) %>% summarize(p=round(sum(rem)/sum(atarget)*100,1))
+
+
+## nfires per year
+nfires <- group_by(fires, year) %>% summarize(n=length(year), a=sum(atarget)) %>% mutate(y=year+1988)
 
 FIRES <- raster(paste0("outputs/", scn.name, "/lyr/FireID_r1t6.tif"), header=T)
 table(FIRES[])
@@ -13,7 +24,7 @@ plot(FIRES, col=viridis(12))
 
 fires <- read.table(paste0("outputs/", scn.name, "/Fires.txt"), header=T)
 sprd <- read.table(paste0("outputs/", scn.name, "/FiresSprd.txt"), header=T)
-id <- 48
+id <- 191
 kk <- filter(sprd, fire.id==id)
 
 xungos <- filter(fires, extra>200)
@@ -29,6 +40,6 @@ for(id in ids){
 round(100*sum(fires$extra>0)/nrow(fires),1)
 round(100*sum(fires$pextra>10)/nrow(fires),1)
 
-
 round(100*sum(fires$pextra>10 & fires$atarget>2000)/sum(fires$atarget>2000),1)
+round(100*sum(fires$pextra>10 & fires$atarget>4000)/sum(fires$atarget>4000),1)
 round(100*sum(fires$pextra>10 & fires$atarget>10000)/sum(fires$atarget>10000),1)
