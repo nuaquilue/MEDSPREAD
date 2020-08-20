@@ -42,16 +42,16 @@ source("mdl/define.scenario.r")
 source("mdl/land.dyn.mdl.r")
 wfactors <- read.table("scenarios/wfactors.txt", header=T)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-nrun <- 3; rpb <- rpb.wind <- rpb.topo <- rpb.conv <- 0.9
-for(i in 221:286){
+nrun <- 3; fi.accelerate <- 5; rpb <- 0.1
+for(i in 110:115){
   scn.name <- paste0("Test", rpb*10, id.scn[i])
   ## Change weights of spread factors
   x <- unlist(filter(wfactors, scn==i) %>% dplyr::select(-scn))
-  sprdw <- data.frame(factor=c("wind", "slope", "flam", "aspc"), fst.w=x, fst.t=x, fst.c=x)
+  sprdw <- data.frame(factor=c("r", "wind", "slope", "flam", "aspc"), fst.w=c(rpb, x), fst.t=c(rpb, x), fst.c=c(rpb, x))
   write.table(sprdw, paste0("inputfiles/WeightSprdFactors_", rpb*10, id.scn[i], ".txt"), quote=F, sep="\t", row.names=F)
   define.scenario(scn.name)
   file.sprd.weight <- paste0("WeightSprdFactors_", rpb*10, id.scn[i])
-  dump(c("nrun", "rpb.wind", "rpb.topo", "rpb.conv", "file.sprd.weight"), paste0("outputs/", scn.name, "/scn.custom.def.r"))
+  dump(c("nrun", "fi.accelerate", "file.sprd.weight"), paste0("outputs/", scn.name, "/scn.custom.def.r"))
   land.dyn.mdl(scn.name)
 }
 

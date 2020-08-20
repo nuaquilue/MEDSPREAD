@@ -2,15 +2,15 @@ rm(list=ls())
 library(raster)
 library(tidyverse)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-rpb <- 0.7
+rpb <- 0.1
 nscn <- 286
 result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
-for(i in 221:nscn){  
+for(i in 1:nscn){  
   scn.name <- paste0("Test", rpb*10, id.scn[i])
   for(r in 1:3){
     load("inputlyrs/rdata/mask.89-99.rdata")
     load("inputlyrs/rdata/fireperim.89-99.rdata")
-    for(y in 1:11){
+    for(y in c(1,3:11)){
       cat(paste("Scn:", scn.name, "- run:", r, "- year:", y), "\n")
       perim.y <- perim.id[,c(1,y+1)]; names(perim.y)[2] <- "perim"
       FIRE <- raster(paste0("outputs/", scn.name, "/lyr/FireID_r", r, "t", y, ".tif"))
@@ -23,7 +23,7 @@ for(i in 221:nscn){
     }
     load("inputlyrs/rdata/mask.00-12.rdata")
     load("inputlyrs/rdata/fireperim.00-12.rdata")
-    for(y in 12:24){
+    for(y in c(12:19,21:24)){
       cat(paste("Scn:", scn.name, "- run:", r, "- year:", y), "\n")
       perim.y <- perim.id[,c(1,y-10)]; names(perim.y)[2] <- "perim"
       FIRE <- raster(paste0("outputs/", scn.name, "/lyr/FireID_r", r, "t", y, ".tif"))

@@ -37,7 +37,7 @@ define.scenario <- function(scn.name){
   
   ## Fire parameters (should not change to much): Spread rate, burn probability, prescribed burns
   pb.upper.th <- 0.85
-  pb.lower.th <- 0.25
+  pb.lower.th <- -1
   fi.accelerate <- 1
   file.sprd.weight <- "WeightSprdFactors"
   
