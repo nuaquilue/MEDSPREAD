@@ -53,11 +53,11 @@ library(tidyverse)
 `%notin%` <- Negate(`%in%`)
 rpb <- 0.1
 report.fire <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
-for(rpb in seq(0.2,0.9,0.1)){
-  a <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
-  print(nrow(a))
-  report.fire <- rbind(report.fire,a)
-}
+# for(rpb in seq(0.2,0.9,0.1)){
+#   a <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
+#   print(nrow(a))
+#   report.fire <- rbind(report.fire,a)
+# }
             
 ## Pctg of area match per scenario and fire.spread.type
 report.scn <- group_by(report.fire, scn, fst) %>% 
