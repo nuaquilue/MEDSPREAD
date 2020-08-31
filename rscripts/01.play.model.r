@@ -43,7 +43,7 @@ source("mdl/land.dyn.mdl.r")
 wfactors <- read.table("scenarios/wfactors.txt", header=T)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
 nrun <- 3; fi.accelerate <- 5; rpb <- 0.2
-for(i in 79:80){
+for(i in 181:200){
   scn.name <- paste0("Test", rpb*10, id.scn[i])
   ## Change weights of spread factors
   x <- unlist(filter(wfactors, scn==i) %>% dplyr::select(-scn))

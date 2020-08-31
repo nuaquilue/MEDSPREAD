@@ -1,9 +1,10 @@
 rm(list=ls())
+library(readxl)
 library(raster)
 library(tidyverse)
-id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-rpb <- 0.1
-nscn <- 286
+id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)  
+rpb <- 0.2
+nscn <- 200 ##286
 result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
 for(i in 1:nscn){  
   scn.name <- paste0("Test", rpb*10, id.scn[i])
@@ -37,13 +38,14 @@ for(i in 1:nscn){
   }
 }
 result <- result[-1,]
+save(result, file="rscripts/outs/result_02_set1.rdata")
 
 ## Pctg of area match per fire and scenario
 fire.ignis <- read.table("inputfiles/FireIgnitions.txt", header=T)
 report.fire <- left_join(result, fire.ignis, by=c("fire.id", "year")) %>%
                mutate(pctg=am/area*100) %>% group_by(scn, year, fire.id, area, fst) %>% 
                summarise(pctg=round(mean(pctg),1), am=round(mean(am),1))
-write.table(report.fire, paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), quote=F, row.names=F, sep="\t")
+write.table(report.fire, paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, "_set1.txt"), quote=F, row.names=F, sep="\t")
 
 
 
@@ -53,29 +55,53 @@ library(tidyverse)
 `%notin%` <- Negate(`%in%`)
 rpb <- 0.1
 report.fire <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
-# for(rpb in seq(0.2,0.9,0.1)){
-#   a <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
-#   print(nrow(a))
-#   report.fire <- rbind(report.fire,a)
-# }
+for(rpb in seq(0.2,0.3,0.1)){
+  a <- read.table(paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, ".txt"), header=T)
+  print(nrow(a))
+  report.fire <- rbind(report.fire,a)
+}
             
+
 ## Pctg of area match per scenario and fire.spread.type
 report.scn <- group_by(report.fire, scn, fst) %>% 
               summarise(min.match=min(pctg), mn.match=mean(pctg), 
                         md.match=median(pctg), max.match=max(pctg))
 # write.table(report.scn, "rscripts/outs/ReportAreaMatchScn.txt", quote=F, row.names=F, sep="\t")
 
+## Read scenario parameters and join
+scn.param <- read_xlsx("C:/WORK/MEDMOD/SpatialModelsR/MEDSPREAD/scenarios/WeightFactors.xlsx", sheet="Hoja1") %>% select(-tot)
+scn.param$n <- scn.param$scn
+all.scn <- scn.param %>% select(-n)
+all.scn$scn <- paste0("Test", 1000+scn.param$n)
+aux <- scn.param %>% select(-n)
+aux$scn <- paste0("Test", 2000+scn.param$n)
+all.scn <- rbind(all.scn, aux)
+aux <- scn.param %>% select(-n)
+aux$scn <- paste0("Test", 3000+scn.param$n)
+all.scn <- rbind(all.scn, aux)
+report.scn <- left_join(report.scn, all.scn, by="scn")
+rm(aux)
+
 ## Best scn per fire spread type
-scn.names <- unique(report.scn$scn)
 # wind
-md.fst <- filter(report.scn, fst==1) %>% group_by(fst) %>% summarise(median=max(md.match))
-filter(report.scn, fst==1, md.match==md.fst$median)
+type <- 1
+fires <- filter(report.scn, fst==type)
+md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
+mn.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(mean=max(mn.match))
+filter(report.scn, fst==type, mn.match==mn.fst$mean)
+fires[order(fires$mn.match, decreasing = T),]
 # topo
-md.fst <- filter(report.scn, fst==2) %>% group_by(fst) %>% summarise(median=max(md.match))
-filter(report.scn, fst==2, md.match==md.fst$median)
+type <- 2
+fires <- filter(report.scn, fst==type)
+md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
+mn.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(mean=max(mn.match))
+filter(report.scn, fst==type, mn.match==mn.fst$mean)
 # conv
-md.fst <- filter(report.scn, fst==3) %>% group_by(fst) %>% summarise(median=max(md.match))
-filter(report.scn, fst==3, md.match==md.fst$median)
+type <- 3
+fires <- filter(report.scn, fst==type)
+md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
+mn.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(mean=max(mn.match))
+filter(report.scn, fst==type, mn.match==mn.fst$mean)
 
 
 ## TOPOGRAPHIC FIRES
@@ -84,37 +110,41 @@ type <- 2
 topo <- filter(report.fire, fst==type) %>% group_by(fire.id) %>% summarize(n=sum(pctg<5))
 topo[order(topo$n, decreasing = T),]
 ## Remove a few fires and repeat searching the best
-less.fires <- filter(report.fire, scn %notin% c(266,475), fst==type)
+less.fires <- filter(report.fire, scn %notin% c(2229,689,26,184,4,266), fst==type)
 report.scn <- group_by(less.fires, scn, fst) %>% 
               summarise(min.match=min(pctg), mn.match=mean(pctg), 
                         md.match=median(pctg), max.match=max(pctg))
-md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
-filter(report.scn, fst==type, md.match==md.fst$median)
+report.scn <- left_join(report.scn, all.scn, by="scn")
+mn.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(mean=max(mn.match))
+filter(report.scn, fst==type, mn.match==mn.fst$mean)
 
 
 ## CONVECTIVE FIRES
 type <- 3
 convec <- filter(report.fire, fst==type) %>% group_by(fire.id) %>% summarize(n=sum(pctg<5))
 convec[order(convec$n, decreasing = T),]
-less.fires <- filter(report.fire, scn %notin% c(259, 1232, 218, 221, 2154, 2152, 213, 634), fst==type)
+less.fires <- filter(report.fire, scn %notin% c(213, 2146,2240,218,259), fst==type)
 report.scn <- group_by(less.fires, scn, fst) %>% 
               summarise(min.match=min(pctg), mn.match=mean(pctg), 
               md.match=median(pctg), max.match=max(pctg))
-md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
-filter(report.scn, fst==type, md.match==md.fst$median)
+report.scn <- left_join(report.scn, all.scn, by="scn")
+mn.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(mean=max(mn.match))
+filter(report.scn, fst==type, mn.match==mn.fst$mean)
 
 
 ## WIND FIRES
 type <- 1
 wind <- filter(report.fire, fst==type) %>% group_by(fire.id) %>% summarize(n=sum(pctg<5))
 wind[order(wind$n, decreasing = T),]
-less.fires <- filter(report.fire, scn %notin% c(2014, 2263, 2302, 2300, 2235, 2310, 2214, 2145, 2205, 230), fst==type)
+less.fires <- filter(report.fire, scn %notin% c(2014, 2214, 2139, 2300, 2212), fst==type)
 report.scn <- group_by(less.fires, scn, fst) %>% 
               summarise(min.match=min(pctg), mn.match=mean(pctg), 
                         md.match=median(pctg), max.match=max(pctg))
-md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
-filter(report.scn, fst==type, md.match==md.fst$median)
+report.scn <- left_join(report.scn, all.scn, by="scn")
+mn.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(mean=max(mn.match))
+filter(report.scn, fst==type, mn.match==mn.fst$mean)
 
 
-## FIRE SPREAD RATE
-track.sprd <- read.table("outputs/Test4283/FiresSprd.txt", header=T)
+
+
+
