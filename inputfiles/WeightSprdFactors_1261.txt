@@ -1,6 +1,0 @@
-factor	fst.w	fst.t	fst.c
-r	0.1	0.1	0.1
-wind	0	0	0
-slope	0.6	0.6	0.6
-flam	0.1	0.1	0.1
-aspc	0.3	0.3	0.3
