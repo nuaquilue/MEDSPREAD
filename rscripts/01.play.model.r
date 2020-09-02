@@ -41,9 +41,9 @@ select <- dplyr::select
 # Load functions
 source("mdl/define.scenario.r")
 source("mdl/land.dyn.mdl.r")
-wfactors <- read.table("scenarios/wfactors.txt", header=T)
+wfactors <- read.table("inputfiles/wfactors.txt", header=T)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)
-nrun <- 3; fi.accelerate <- 5; rpb <- 0.1
+nrun <- 3; fi.accelerate <- 5; rpb <- 0.4
 write.sp.outputs <- F; validation <- T
 for(i in 1:286){
   scn.name <- paste0("Test", rpb*10, id.scn[i])

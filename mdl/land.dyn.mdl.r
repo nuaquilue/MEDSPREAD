@@ -131,7 +131,11 @@ land.dyn.mdl <- function(scn.name){
       
       ## VALIDATION
       if(validation & length(burnt.cells)>0){
-        perim.y <- perim.id[,c(1,t+1)]; names(perim.y)[2] <- "perim"
+        if(t<=11)
+          perim.y <- perim.id[,c(1,t+1)]
+        else
+          perim.y <- perim.id[,c(1,t-10)]
+        names(perim.y)[2] <- "perim"
         ## Build fire layer and transform into a dataframe
         MAP <- MASK
         aux <- data.frame(cell.id=burnt.cells, fire.id=fire.ids)
