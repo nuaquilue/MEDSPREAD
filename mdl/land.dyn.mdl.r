@@ -38,6 +38,10 @@ land.dyn.mdl <- function(scn.name){
   track.post.fire <- data.frame(run=NA, year=NA, spp.out=NA, Var2=NA, Freq=NA)
   track.sprd <- data.frame(run=NA, year=NA, fire.id=NA, step=NA, cell.id=NA, slope=NA, wind=NA,
                            flam=NA, aspc=NA, fuel=NA, sr=NA, fi=NA, pb=NA, burn=NA)
+  
+  ## Dataframe to record validation
+  if(validation)
+    result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
 
   ## Set up time sequence
   time.seq <- seq(1, time.horizon, 1)
@@ -54,6 +58,8 @@ land.dyn.mdl <- function(scn.name){
     load("inputlyrs/rdata/coordinates.rdata")
     load("inputlyrs/rdata/orography.rdata")
     load("inputlyrs/rdata/land.rdata")
+    if(validation)
+      load("inputlyrs/rdata/fireperim.89-99.rdata")
     
     ## Schedule of fires and post-fire
     fire.schedule <- seq(1, time.horizon, 1)
@@ -74,6 +80,8 @@ land.dyn.mdl <- function(scn.name){
         orography <- out[[3]]
         ignis <- out[[4]]
         rm(out); gc(verbose=F)
+        if(validation)
+          load("inputlyrs/rdata/fireperim.00-12.rdata")
       }
       
       ## FIRES
@@ -121,12 +129,29 @@ land.dyn.mdl <- function(scn.name){
         writeRaster(MAP, paste0("outputs/", scn.name, "/lyr/FireID_r", irun, "t", t, ".tif"), format="GTiff", overwrite=T)
       }
       
+      ## VALIDATION
+      if(validation & length(burnt.cells)>0){
+        perim.y <- perim.id[,c(1,t+1)]; names(perim.y)[2] <- "perim"
+        ## Build fire layer and transform into a dataframe
+        MAP <- MASK
+        aux <- data.frame(cell.id=burnt.cells, fire.id=fire.ids)
+        aux <- data.frame(cell.id=land$cell.id) %>% left_join(aux, by="cell.id")
+        MAP[!is.na(MASK[])] <- aux$fire.id
+        dta <- data.frame(cell.id=1:ncell(MASK[]), mask=MASK[], fire.id=MAP[])
+        ## Match simulated and observed fires
+        aux <- filter(dta, !is.na(mask)) %>% select(-mask) %>% left_join(perim.y, by="cell.id") %>%
+          filter(!is.na(fire.id)) %>% mutate(dif=fire.id-perim) %>% filter(dif==0) %>% 
+          group_by(fire.id) %>% summarize(am=length(fire.id))
+        if(nrow(aux)>0)
+          result <- rbind(result, data.frame(scn=scn.name, run=irun, year=t, aux))    
+      }
+      
+      
       ## Deallocate memory
       gc(verbose=F)  
       cat("\n")
       
     } # time
-  
   } # run
   
   cat("... writing outputs", "\n")
@@ -136,5 +161,6 @@ land.dyn.mdl <- function(scn.name){
   write.table(track.sprd[-1,], paste0(out.path, "/FiresSprd.txt"), quote=F, row.names=F, sep="\t")
   names(track.post.fire)[4:5] <- c("spp.in", "ha")
   write.table(track.post.fire[-1,], paste0(out.path, "/PostFire.txt"), quote=F, row.names=F, sep="\t")
-
+  if(validation)
+    write.table(result[-1,], paste0(out.path, "/Validation.txt"), quote=F, row.names=F, sep="\t")
 }

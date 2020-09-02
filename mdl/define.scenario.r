@@ -28,6 +28,7 @@ define.scenario <- function(scn.name){
   
   ## Flags to write spatial and tabular output data
   write.sp.outputs <- TRUE
+  validation <- FALSE
   
   ## File of fire ignitions
   file.fire.ignis <- "FireIgnitions"

@@ -27,14 +27,6 @@ fire.regime <- function(land, ignis, coord, orography, t){
   track.sprd <- data.frame(year=NA, fire.id=NA, step=NA, cell.id=NA, slope=NA, wind=NA,
                            flam=NA, aspc=NA, fuel=NA, sr=NA, fi=NA, pb=NA, burn=NA)
   
-  ## Wind direction between 12 neigbours
-  ## Wind direction is coded as 0-N, 45-NE, 90-E, 135-SE, 180-S, 225-SW, 270-W, 315-NE
-  default.neigh <- data.frame(x=c(-1,1,2900,-2900,2899,-2901,2901,-2899,-2,2,5800,-5800),
-                              windir=c(270,90,180,0,225,315,135,45,270,90,180,0),
-                              dist=c(100,100,100,100,141.421,141.421,141.421,141.421,200,200,200,200))
-  default.nneigh <- nrow(default.neigh)
-  sub.default.neigh <- default.neigh
-  
   ## Fuel
   aux <- left_join(subland, spp.ages, by="spp") %>% 
          mutate(fuel=ifelse(spp %in% c(11,12,13), 0.2,
@@ -58,7 +50,7 @@ fire.regime <- function(land, ignis, coord, orography, t){
     
     ## cell.id of the ignition point
     igni.id <- unlist(filter(ignis, id==i) %>% select(cell.id))
-    step=1
+    step <- 1
     
     ## Get the target area, the fire spread type and the wind direction
     fire.size.target <- unlist(filter(fire.ignis, fire.id==i) %>% select(area))
@@ -74,6 +66,14 @@ fire.regime <- function(land, ignis, coord, orography, t){
     waspc <- fst.sprd.weight[5,fire.spread.type+1]
     spp.flam <- filter(spp.flammability, fst==fire.spread.type) %>% select(-fst)
     fi.acc <- ifelse(fire.size.target>1000, fi.accelerate, 1)
+    
+    ## Start with the 12 neigbours of the ignition
+    ## Wind direction is coded as 0-N, 45-NE, 90-E, 135-SE, 180-S, 225-SW, 270-W, 315-NE
+    default.neigh <- data.frame(x=c(-1,1,2900,-2900,2899,-2901,2901,-2899,-2,2,5800,-5800),
+                                windir=c(270,90,180,0,225,315,135,45,270,90,180,0),
+                                dist=c(100,100,100,100,141.421,141.421,141.421,141.421,200,200,200,200))
+    default.nneigh <- nrow(default.neigh)
+    sub.default.neigh <- default.neigh
     
     ## Initialize tracking variables
     ## Ignition always burnt, and it does in high intensity when no-PB
@@ -100,6 +100,9 @@ fire.regime <- function(land, ignis, coord, orography, t){
       ## is_inCpp returns the position of neigh.id$cell.id in the 'land' data.frame (not the cell.id)!
       neigh.in.land <- is_inCpp(neigh.id$cell.id, subland$cell.id)
       i.land.in.neigh <- unique(neigh.in.land[which(neigh.in.land!=-1)])
+      ## If all the available neighbours are out of Catalonia, stop spreading
+      if(length(i.land.in.neigh)==0)
+        break
       
       ## For all neighbours, compute fire intenstiy and flammability factors
       ## fire intenstiy and flam will be NA for non burnable covers
@@ -178,12 +181,12 @@ fire.regime <- function(land, ignis, coord, orography, t){
       if(nburn==1)
         fire.front <- sprd.rate$cell.id[sprd.rate$burn]
       if(nburn>1){
-        z <- scales::rescale(aburnt/fire.size.target, to=c(-3, 2), from=c(0,1))
+        # z <- scales::rescale(aburnt/fire.size.target, to=c(-3, 2), from=c(0,1))
         # n1 <- pmax(2, round(nburn/(1+exp(z))))
         # n2 <- pmin(round(nburn*0.8), pmax(2,round(nburn/(1+exp(z)))))
-        n3 <- pmin(round(nburn*(1-nburn/(2*nrow(neigh.land)))), pmax(2,round(nburn/(1+exp(z)))))
-        # n4 <- pmin(round(nburn*(1-nburn/(1.5*nrow(neigh.land)))), pmax(2,round(nburn/(1+exp(z)))))
-        fire.front <- base::sample(sprd.rate$cell.id[sprd.rate$burn], n3,
+        # n3 <- pmin(round(nburn*(1-nburn/(2*nrow(neigh.land)))), pmax(2,round(nburn/(1+exp(z)))))
+        n4 <- rdunif(1, round(nburn*0.2), round(nburn*0.8))
+        fire.front <- base::sample(sprd.rate$cell.id[sprd.rate$burn], n4,
                                    replace=F, prob=sprd.rate$fi[sprd.rate$burn]*runif(nburn, 0.65, 1))  
         ### All03, All04
         # if(fire.size.target>2000 & aburnt/fire.size.target<=0.75)
@@ -199,8 +202,9 @@ fire.regime <- function(land, ignis, coord, orography, t){
       if(length(fire.front)==0)
         break
       
-      ## Subset of 9 default neighbours
-      sub.default.neigh <- default.neigh[c(1:4,sample(5:12,6,replace=F)),]
+      ## Subset of 4+(3, or 4, ... or 7) = 7 or 8 or ... 11 default neighbours
+      ## Minimum one neighour is not evaluated. 
+      sub.default.neigh <- default.neigh[c(1:4, sample(5:12, sample(3:7,1), replace=F)),]
       default.nneigh <- nrow(sub.default.neigh)
       
       ## Increment step

@@ -3,8 +3,8 @@ library(readxl)
 library(raster)
 library(tidyverse)
 id.scn <- c(paste0("00", 1:9), paste0("0", 10:99), 100:286)  
-rpb <- 0.2
-nscn <- 200 ##286
+rpb <- 0.1
+nscn <- 286
 result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
 for(i in 1:nscn){  
   scn.name <- paste0("Test", rpb*10, id.scn[i])
@@ -51,6 +51,7 @@ write.table(report.fire, paste0("rscripts/outs/ReportAreaMatchFire_0", rpb*10, "
 
 ## SEE ALL SCN TOGETHER
 rm(list=ls())
+library(readxl)
 library(tidyverse)
 `%notin%` <- Negate(`%in%`)
 rpb <- 0.1
@@ -69,7 +70,7 @@ report.scn <- group_by(report.fire, scn, fst) %>%
 # write.table(report.scn, "rscripts/outs/ReportAreaMatchScn.txt", quote=F, row.names=F, sep="\t")
 
 ## Read scenario parameters and join
-scn.param <- read_xlsx("C:/WORK/MEDMOD/SpatialModelsR/MEDSPREAD/scenarios/WeightFactors.xlsx", sheet="Hoja1") %>% select(-tot)
+scn.param <- read_xlsx("d:/MEDMOD/SpatialModelsR/MEDSPREAD/scenarios/WeightFactors.xlsx", sheet="Hoja1") %>% select(-tot)
 scn.param$n <- scn.param$scn
 all.scn <- scn.param %>% select(-n)
 all.scn$scn <- paste0("Test", 1000+scn.param$n)
