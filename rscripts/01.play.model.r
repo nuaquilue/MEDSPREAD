@@ -1,26 +1,27 @@
-############################################ RUN A SCN ##################################################
+library(readxl)
+library(raster)
+library(viridis)
+library(tidyverse)
+
+############################################ RUN SOME SCN ##################################################
 rm(list=ls())
-# Load functions
-source("mdl/define.scenario.r")
-source("mdl/land.dyn.mdl.r")  
-scn.name <- "TestMdl"
-define.scenario(scn.name)
-# Change target parameters
-time.horizon <- 24
-nrun <- 1
-file.fire.ignis <- "FireIgnitions"
-write.sp.outputs <- F
-validation <- T
-pb.lower.th <- -1
-fi.accelerate <- 5
-file.sprd.weight <- "WeightSprdFactors_1221"
-# Write the name of the customized parameters in the dump function. 
-# It copies these R objects into the file outputs/test/scn.custom.def.r
-dump(c("time.horizon", "nrun", "fi.accelerate", "write.sp.outputs", "validation",
-       "file.fire.ignis", "pb.lower.th", "file.sprd.weight"),
-     paste0("outputs/", scn.name, "/scn.custom.def.r"))
-# Run the model
-system.time(land.dyn.mdl(scn.name))
+source("mdl/define.scenario.r"); source("mdl/land.dyn.mdl.r") 
+scenarios <- read_xlsx("C:/WORK/MEDMOD/SpatialModelsR/MEDSPREAD/Scenarios.xlsx", sheet="Obj4")
+for(i in 9:11){
+  nrun <- 3
+  scn.name <- scenarios$scn.name[i]
+  define.scenario(scn.name)
+  fuel.opt <- scenarios$fuel.opt[i]
+  facc <- scenarios$facc[i]
+  rpb <- scenarios$rpb[i]
+  pb.upper.th <- scenarios$pb.upper.th[i]
+  file.fire.ignis <- scenarios$file.fire.ignis[i]
+  file.sprd.weight <- scenarios$file.sprd.weight[i]
+  dump(c("nrun", "fuel.opt", "facc", "rpb", "pb.upper.th", "file.fire.ignis", "file.sprd.weight"), 
+       paste0("outputs/", scn.name, "/scn.custom.def.r"))
+  land.dyn.mdl(scn.name)
+}
+
 
 
 ############################################## INITIALIZATION ########################################################

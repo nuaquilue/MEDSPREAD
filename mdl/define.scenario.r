@@ -27,7 +27,7 @@ define.scenario <- function(scn.name){
   nrun <- 10
   
   ## Flags to write spatial and tabular output data
-  write.sp.outputs <- TRUE
+  print.maps <- TRUE
   validation <- FALSE
   
   ## File of fire ignitions
@@ -39,8 +39,11 @@ define.scenario <- function(scn.name){
   ## Fire parameters (should not change to much): Spread rate, burn probability, prescribed burns
   pb.upper.th <- 0.85
   pb.lower.th <- -1
-  fi.accelerate <- 1
+  facc <- 1
   file.sprd.weight <- "WeightSprdFactors"
+  rpb <- 0
+  fire.intens.th <- 0.35
+  fuel.opt <- "A"
   
   ## Save all the variables in .r file to be further loaded by landscape.dyn.r
   if(!file.exists(out.path))
