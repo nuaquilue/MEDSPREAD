@@ -7,9 +7,9 @@ library(tidyverse)
 rm(list=ls())
 source("mdl/define.scenario.r"); source("mdl/land.dyn.mdl.r") 
 scenarios <- read_xlsx("Scenarios.xlsx", sheet="Obj4")
-for(i in 6){
-  # print.maps <- F
-  # validation <- T
+for(i in 7:15){
+  print.maps <- F
+  validation <- T
   nrun <- 3
   scn.name <- scenarios$scn.name[i]
   define.scenario(scn.name)
@@ -19,7 +19,8 @@ for(i in 6){
   pb.upper.th <- scenarios$pb.upper.th[i]
   file.fire.ignis <- scenarios$file.fire.ignis[i]
   file.sprd.weight <- scenarios$file.sprd.weight[i]
-  dump(c("nrun", "fuel.opt", "facc", "rpb", "pb.upper.th", "file.fire.ignis", "file.sprd.weight"), 
+  dump(c("nrun", "fuel.opt", "facc", "rpb", "pb.upper.th", "file.fire.ignis",
+         "file.sprd.weight", "print.maps", "validation"), 
        paste0("outputs/", scn.name, "/scn.custom.def.r"))
   land.dyn.mdl(scn.name)
 }

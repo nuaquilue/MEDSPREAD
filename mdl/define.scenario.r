@@ -24,7 +24,7 @@ define.scenario <- function(scn.name){
   time.horizon <- 24
   
   ## Number of runs (i.e. replicas)
-  nrun <- 10
+  nrun <- 1
   
   ## Flags to write spatial and tabular output data
   print.maps <- TRUE

@@ -88,6 +88,7 @@ land.dyn.mdl <- function(scn.name){
       }
       
       ## FIRES
+      burnt.cells <- numeric()
       fire.out <- wildfires(land, ignis, coord, orography, t, MASK, facc, rpb, 
                             fire.intens.th, print.maps, irun, pb.lower.th, pb.upper.th, fuel.opt)
       if(nrow(fire.out$track.fire)>0)
@@ -99,9 +100,11 @@ land.dyn.mdl <- function(scn.name){
       if(nrow(fire.out$track.sprd)>0)
         track.sprd <- rbind(track.sprd, data.frame(run=irun, fire.out[[4]]))
       # spp burnt
-      aux <- left_join(burnt.cells, select(land, cell.id, spp), by="cell.id") %>%
-        group_by(fire.id, spp) %>% summarize(aburnt=length(spp))
-      track.burnt.spp <-  rbind(track.burnt.spp, data.frame(run=irun,  aux)) 
+      if(length(burnt.cells)>0){
+        aux <- left_join(burnt.cells, select(land, cell.id, spp), by="cell.id") %>%
+          group_by(fire.id, spp) %>% summarize(aburnt=length(spp))
+        track.burnt.spp <-  rbind(track.burnt.spp, data.frame(run=irun,  aux))   
+      }
       # Done with fires!
       fire.schedule <- fire.schedule[-1] 
       rm(fire.out)
@@ -126,25 +129,19 @@ land.dyn.mdl <- function(scn.name){
       ## VALIDATION
       if(validation & length(burnt.cells)>0){
         cat("Validation", "\n")
+        # Retrive the observed perimeters for time t
         if(t<=11)
           perim.y <- perim.id[,c(1,t+1)]
         else
           perim.y <- perim.id[,c(1,t-10)]
         names(perim.y)[2] <- "perim"
-        ## Build fire layer and transform into a dataframe
-        MAP <- MASK
-        aux <- data.frame(cell.id=burnt.cells, fire.id=fire.ids)
-        aux <- data.frame(cell.id=land$cell.id) %>% left_join(aux, by="cell.id")
-        MAP[!is.na(MASK[])] <- aux$fire.id
-        dta <- data.frame(cell.id=1:ncell(MASK[]), mask=MASK[], fire.id=MAP[])
-        ## Match simulated and observed fires
-        aux <- filter(dta, !is.na(mask)) %>% select(-mask) %>% left_join(perim.y, by="cell.id") %>%
-          filter(!is.na(fire.id)) %>% mutate(dif=fire.id-perim) %>% filter(dif==0) %>% 
-          group_by(fire.id) %>% summarize(am=length(fire.id))
-        if(nrow(aux)>0)
-          result <- rbind(result, data.frame(scn=scn.name, run=irun, year=t, aux))    
+        # Load the map with fire.ids
+        load(paste0("outputs/", scn.name, "/Maps_r", irun, "t", t, ".rdata"))  
+        # Compute difference
+        dif <- data.frame(fire.id=perim.y$perim, x=perim.y$perim-map$id) %>% filter(x==0) %>% 
+            group_by(fire.id) %>% summarise(am=length(x))
+        result <- rbind(result, data.frame(scn=scn.name, run=irun, year=t, dif)) 
       }
-      
       
       ## Deallocate memory
       gc(verbose=F)  
