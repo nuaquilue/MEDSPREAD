@@ -6,8 +6,8 @@ library(tidyverse)
 ############################################ RUN SOME SCN ##################################################
 rm(list=ls())
 source("mdl/define.scenario.r"); source("mdl/land.dyn.mdl.r") 
-scenarios <- read_xlsx("C:/WORK/MEDMOD/SpatialModelsR/MEDSPREAD/Scenarios.xlsx", sheet="Obj4")
-for(i in 4){
+scenarios <- read_xlsx("Scenarios.xlsx", sheet="Obj4")
+for(i in 2){
   nrun <- 3
   scn.name <- scenarios$scn.name[i]
   define.scenario(scn.name)
