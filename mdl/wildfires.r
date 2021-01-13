@@ -33,19 +33,26 @@ wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.in
   
   ## Fuel; Fuel values of GrassCrop, Shrubs, Saplings, YoungForest, MatureForest
   fuel.val <- rbind(data.frame(opt="A", x=c(0.2,0.9,0.2,0.4,0.95)),
-                    data.frame(opt="B", x=c(0.1,0.9,0.2,0.4,0.95)),
-                    data.frame(opt="C", x=c(0.1,1,0.2,0.4,0.95)))
+                    data.frame(opt="B", x=c(0.1,0.9,0.2,0.4,0.4,0.95,0.95)),
+                    data.frame(opt="C", x=c(0.1,1,0.2,0.4,04,0.95,0.95)),
+                    data.frame(opt="D", x=c(0.1,0.9,0.2,0.5,0.3,1,0.8)), # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
+                    data.frame(opt="E", x=c(0.1,0.9,0.2,0.6,0.3,1,0.7)), # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
+                    data.frame(opt="F", x=c(0.1,0.9,0.2,0.8,0.3,1,0.5))) # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
   fuel.val <- fuel.val$x[fuel.val$opt==fuel.opt]
   aux <- left_join(subland, spp.ages, by="spp") %>% 
          mutate(fuel=ifelse(spp %in% c(11,12,13), fuel.val[1], # grass+crop
-                       ifelse(spp==10, fuel.val[2],   ## max in MEDFIRE is 0.89
+                       ifelse(spp==10, fuel.val[2],   ## shrub, max in MEDFIRE is 0.89
                           ifelse(tsdist<=7, fuel.val[3],  # saplings
-                              ifelse(tsdist<young, fuel.val[4], fuel.val[5])))))  # young vs. mature forest
+                              ifelse(tsdist<=young & spp %in% c(1:4,8), fuel.val[4],  # conifer young
+                                 ifelse(tsdist<=young & spp %in% c(5:7,9), fuel.val[5], # decid young
+                                     ifelse(tsdist<=young & spp %in% c(1:4,8), fuel.val[6], # conifer mature
+                                          fuel.val[7])))))))  # decidous  mature
   aux2 <- filter(aux, spp==10, tsdist<=24) %>% select(-fuel) %>%
           left_join(shrub.fuel, by="tsdist")
   aux$fuel[aux$cell.id %in% aux2$cell.id] <- aux2$fuel
   subland$fuel <- aux$fuel
   rm(aux); rm(aux2)
+
   
   ## Start with the 8 neigbours of the ignition
   ## Wind direction is coded as 0-N, 45-NE, 90-E, 135-SE, 180-S, 225-SW, 270-W, 315-NE

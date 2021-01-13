@@ -7,7 +7,7 @@ library(tidyverse)
 rm(list=ls())
 source("mdl/define.scenario.r"); source("mdl/land.dyn.mdl.r") 
 scenarios <- read_xlsx("C:/WORK/MEDMOD/SpatialModelsR/MEDSPREAD/Scenarios.xlsx", sheet="Obj4")
-for(i in 9:11){
+for(i in 4){
   nrun <- 3
   scn.name <- scenarios$scn.name[i]
   define.scenario(scn.name)
