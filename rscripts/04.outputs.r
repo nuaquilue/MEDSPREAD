@@ -57,7 +57,7 @@ print(group_by(burnt.lct.fire, lct) %>% summarise(mn=round(mean(pct)), sd=round(
 
 ######################################## PCT LCT BURNT PER FST ########################################
 rm(list=ls())
-scn.name <- "Scn_pbEXPFI_windAslopeAfuelB_acc2_rpb3_up8_wDefault"
+scn.name <- "Scn_pbEXPFI_windAslopeAfuelH_acc2_rpb3_up8_wDefault"
 nrun <- 3
 ignitions <- read.table("inputfiles/FireIgnitions.txt", header=T) %>% select(fire.id, fst)
 lctype <- data.frame(spp=1:16,lct=c(rep("FC",4), rep("FD",3), "FC", "FD", "SH", rep("GC",3), rep("UR",3)))

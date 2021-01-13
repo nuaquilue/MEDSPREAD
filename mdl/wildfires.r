@@ -38,7 +38,8 @@ wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.in
                     data.frame(opt="D", x=c(0.1,0.9,0.2,0.5,0.3,1,0.8)), # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
                     data.frame(opt="E", x=c(0.1,0.9,0.2,0.6,0.3,1,0.7)), # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
                     data.frame(opt="F", x=c(0.1,0.9,0.2,0.8,0.3,1,0.5)), # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
-                    data.frame(opt="G", x=c(0.1,0.9,0.2,0.6,0.3,1.6,0.8))) # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
+                    data.frame(opt="G", x=c(0.1,0.9,0.2,0.6,0.3,1.6,0.8)), # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
+                    data.frame(opt="H", x=c(0.1,0.9,0.2,2,0.3,4,0.6))) # GC, SH, Sapling, ConifYoung, DecidYoung, ConifMature, DecidMature
   fuel.val <- fuel.val$x[fuel.val$opt==fuel.opt]
   aux <- left_join(subland, spp.ages, by="spp") %>% 
          mutate(fuel=ifelse(spp %in% c(11,12,13), fuel.val[1], # grass+crop
