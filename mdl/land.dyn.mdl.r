@@ -125,6 +125,7 @@ land.dyn.mdl <- function(scn.name){
       
       ## VALIDATION
       if(validation & length(burnt.cells)>0){
+        cat("Validation", "\n")
         if(t<=11)
           perim.y <- perim.id[,c(1,t+1)]
         else
