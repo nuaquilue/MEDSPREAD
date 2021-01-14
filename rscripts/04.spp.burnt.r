@@ -34,17 +34,15 @@ for(y in 2:ncol(perim.id)){
 ## Totals
 burnt.lct <- burnt.lct[-1,]
 ab.fst <- group_by(burnt.lct, fst) %>% summarise(tot=sum(ab)) %>% filter(!is.na(fst))
-ab.fst.lct <- group_by(burnt.lct, fst, lct) %>% summarise(ab=sum(ab)) %>% filter(!is.na(fst)) %>% 
-  left_join(ab.fst, by="fst")  %>% mutate(pct=round(100*ab/tot))
-ab.fst.lct
+obs.ab.fst.lct <- group_by(burnt.lct, fst, lct) %>% summarise(ab=sum(ab)) %>% filter(!is.na(fst)) %>% 
+                  left_join(ab.fst, by="fst")  %>% mutate(pct=100*ab/tot)
+obs.ab.fst.lct
 tot <- sum(burnt.lct$ab)
-ab.lct <- group_by(burnt.lct, lct) %>% summarise(ab=sum(ab)) %>% filter(!is.na(lct)) %>% 
-  mutate(pct=round(100*ab/tot))
-ab.lct
-
-
-
-
+obs.ab.lct <- group_by(burnt.lct, lct) %>% summarise(ab=sum(ab)) %>% filter(!is.na(lct)) %>% 
+              mutate(pct=100*ab/tot)
+obs.ab.lct
+save(obs.ab.fst.lct, file="rscripts/outs/obs.ab.fst.lct.rdata")
+save(obs.ab.lct, file="rscripts/outs/obs.ab.lct.rdata")
 
 
 

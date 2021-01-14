@@ -89,8 +89,8 @@ land.dyn.mdl <- function(scn.name){
       
       ## FIRES
       burnt.cells <- numeric()
-      fire.out <- wildfires(land, ignis, coord, orography, t, MASK, facc, rpb, 
-                            fire.intens.th, print.maps, irun, pb.lower.th, pb.upper.th, fuel.opt)
+      fire.out <- wildfires(land, ignis, coord, orography, t, MASK, facc, rpb, fire.intens.th, print.maps, 
+                            irun, pb.lower.th, pb.upper.th, fuel.opt, wwind, wslope)
       if(nrow(fire.out$track.fire)>0)
         track.fire <- rbind(track.fire, data.frame(run=irun, fire.out[[1]]))
       if(nrow(fire.out$track.burnt.cells)>0)

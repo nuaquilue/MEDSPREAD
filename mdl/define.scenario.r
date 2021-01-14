@@ -44,6 +44,7 @@ define.scenario <- function(scn.name){
   rpb <- 0
   fire.intens.th <- 0.35
   fuel.opt <- "A"
+  wwind <-  wslope <- 0.5
   
   ## Save all the variables in .r file to be further loaded by landscape.dyn.r
   if(!file.exists(out.path))
