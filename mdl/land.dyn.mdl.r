@@ -43,9 +43,12 @@ land.dyn.mdl <- function(scn.name){
   
   
   ## Dataframe to record validation
-  if(validation)
-    result <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
-
+  if(validation){
+    result.am <- data.frame(scn=NA, run=NA, year=NA, fire.id=NA, am=NA)
+    result.lctburnt <- data.frame(scn=NA, run=NA, year=NA, lct=NA, ab=NA, pct=NA)
+    result.lctburnt.fst <- data.frame(scn=NA, run=NA, year=NA, fst=NA, lct=NA, ab=NA, pct=NA)
+  }
+  
   ## Set up time sequence
   time.seq <- seq(1, time.horizon, 1)
   
@@ -90,7 +93,7 @@ land.dyn.mdl <- function(scn.name){
       ## FIRES
       burnt.cells <- numeric()
       fire.out <- wildfires(land, ignis, coord, orography, t, MASK, facc, rpb, fire.intens.th, print.maps, 
-                            irun, pb.lower.th, pb.upper.th, fuel.opt, wwind, wslope)
+                            irun, pb.lower.th, pb.upper.th, fuel.opt, validation)
       if(nrow(fire.out$track.fire)>0)
         track.fire <- rbind(track.fire, data.frame(run=irun, fire.out[[1]]))
       if(nrow(fire.out$track.burnt.cells)>0)
@@ -104,6 +107,10 @@ land.dyn.mdl <- function(scn.name){
         aux <- left_join(burnt.cells, select(land, cell.id, spp), by="cell.id") %>%
           group_by(fire.id, spp) %>% summarize(aburnt=length(spp))
         track.burnt.spp <-  rbind(track.burnt.spp, data.frame(run=irun,  aux))   
+      }
+      if(validation & length(burnt.cells)>0){
+        result.lctburnt <- rbind(result.lctburnt, data.frame(scn=scn.name, run=irun, year=t, fire.out[[5]]))
+        result.lctburnt.fst <- rbind(result.lctburnt.fst, data.frame(scn=scn.name, run=irun, year=t, fire.out[[6]])) 
       }
       # Done with fires!
       fire.schedule <- fire.schedule[-1] 
@@ -140,7 +147,7 @@ land.dyn.mdl <- function(scn.name){
         # Compute difference
         dif <- data.frame(fire.id=perim.y$perim, x=perim.y$perim-map$id) %>% filter(x==0) %>% 
             group_by(fire.id) %>% summarise(am=length(x))
-        result <- rbind(result, data.frame(scn=scn.name, run=irun, year=t, dif)) 
+        result.am <- rbind(result.am, data.frame(scn=scn.name, run=irun, year=t, dif)) 
       }
       
       ## Deallocate memory
@@ -159,6 +166,9 @@ land.dyn.mdl <- function(scn.name){
   write.table(track.burnt.spp[-1,], paste0(out.path, "/_SppBurnt.txt"), quote=F, row.names=F, sep="\t")
   names(track.post.fire)[4:5] <- c("spp.in", "ha")
   write.table(track.post.fire[-1,], paste0(out.path, "/_PostFire.txt"), quote=F, row.names=F, sep="\t")
-  if(validation)
-    write.table(result[-1,], paste0(out.path, "/_Validation.txt"), quote=F, row.names=F, sep="\t")
+  if(validation){
+    write.table(result.am[-1,], paste0(out.path, "/_AreaMatch.txt"), quote=F, row.names=F, sep="\t")
+    write.table(result.lctburnt[-1,], paste0(out.path, "/_PctBurntLCT.txt"), quote=F, row.names=F, sep="\t")
+    write.table(result.lctburnt.fst[-1,], paste0(out.path, "/_PctBurntLCT.FST.txt"), quote=F, row.names=F, sep="\t")
+  }
 }

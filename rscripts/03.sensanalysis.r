@@ -7,22 +7,20 @@ play <- function(){
   source("rscripts/03.sensanalysis.r")
   
   ## List of scenarios
-  list.scn <- list.dirs(path=paste0(getwd(), "/outputs"), full.name=F, recursive=F)
+  list.scn <- list.dirs(path=paste0(getwd(), "/outputs"), full.name=F, recursive=F); list.scn
   
   ## Auto-extinction
   extinct <- self.extinguishing(list.scn)
-  write.table(extinct, "rscripts/outs/extinct_27scn.txt", quote=F, row.names=F, sep="\t")
+  write.table(extinct, "rscripts/outs/extinct_33scn.txt", quote=F, row.names=F, sep="\t")
   
   ## Percentage burnt per land-cover type
   lctburnt <- pct.lct.burnt(list.scn, 3) 
-  write.table(lctburnt[[1]], "rscripts/outs/pctburntlctfst_27scn.txt", quote=F, row.names=F, sep="\t")
-  write.table(lctburnt[[2]], "rscripts/outs/pctburntlct_27scn.txt", quote=F, row.names=F, sep="\t")
-  write.table(lctburnt[[3]], "rscripts/outs/error.pctburntlctfst_27scn.txt", quote=F, row.names=F, sep="\t")
-  write.table(lctburnt[[4]], "rscripts/outs/error.pctburntlct_27scn.txt", quote=F, row.names=F, sep="\t")
+  write.table(lctburnt[[1]], "rscripts/outs/error.pctburntlctfst_33scn.txt", quote=F, row.names=F, sep="\t")
+  write.table(lctburnt[[2]], "rscripts/outs/error.pctburntlct_33scn.txt", quote=F, row.names=F, sep="\t")
   
   ## Match area
   report <- match.area(list.scn)
-  write.table(report, "rscripts/outs/matcharea_27scn.txt", quote=F, row.names=F, sep="\t")
+  write.table(report, "rscripts/outs/matcharea_33scn.txt", quote=F, row.names=F, sep="\t")
   best.scn(report)
   
   ## Indagar
@@ -56,11 +54,42 @@ self.extinguishing <- function(list.scn){
 
 
 ######################################## PCT LCT BURNT PER FST ########################################
-pct.lct.burnt <- function(list.scn, nrun){
+pct.lct.burnt <- function(list.scn){
+  
+  load("rscripts/outs/obs.ab.lct.rdata")
+  load("rscripts/outs/obs.ab.fst.lct.rdata")
+  report <- data.frame(scn=NA, err=NA)
+  report.fst <- data.frame(scn=NA, fst=NA, err=NA)
+  for(scn in list.scn){
+    # Diference with observed per fst
+    ab.fst.lct.year <- read.table(paste0("outputs/", scn, "/_PctBurntLCT.FST.txt"), header=T) 
+    ab.fst <- group_by(ab.fst.lct.year, scn, fst) %>% summarise(tot=sum(ab))
+    ab.fst.lct <- group_by(ab.fst.lct.year, scn, fst, lct) %>% summarise(ab=sum(ab)) %>% 
+      left_join(ab.fst, by=c("scn", "fst")) %>% mutate(pct=100*ab/tot)
+    dif.fst <- left_join(ab.fst.lct, select(obs.ab.fst.lct, fst, lct, pct), by=c("fst", "lct")) %>% group_by(scn, fst) %>% 
+      summarize(err = sqrt(sum((pct.x-pct.y)^2)))
+    report.fst <- rbind(report.fst, dif.fst)
+    # Diference with observed 
+    ab <- group_by(ab.fst.lct.year, scn) %>% summarise(tot=sum(ab))
+    ab.lct <- group_by(ab.fst.lct.year, scn, lct) %>% summarise(ab=sum(ab)) %>% left_join(ab, by="scn") %>% 
+      mutate(pct=100*ab/tot)
+    dif <- left_join(ab.lct, select(obs.ab.lct, lct, pct), by="lct") %>% group_by(scn) %>% 
+      summarize(err = sqrt(sum((pct.x-pct.y)^2)))
+    report <- rbind(report, dif)
+  }
+ 
+  report <- report[-1,]
+  report.fst <- report.fst[-1,]
+  return(report=report, report.fst=report.fst)
+   
+}
+
+cook.pct.lct.burnt <- function(list.scn, nrun){
   ignitions <- read.table("inputfiles/FireIgnitions.txt", header=T) %>% select(fire.id, fst)
   lctype <- data.frame(spp=1:16,lct=c(rep("FC",4), rep("FD",3), "FC", "FD", "SH", rep("GC",3), rep("UR",3)))
   burnt.lct <- data.frame(fst=NA, lct=NA, ab=NA, year=NA, scn=NA)
   for(scn in list.scn){
+    print(scn)
     for(r in 1:nrun){
       for(t in c(1,3:19,21:24)){
         load(paste0("outputs/", scn, "/Maps_r",r, "t", t, ".rdata"))
@@ -113,7 +142,7 @@ match.area <- function(list.scn){
   ## Pctg of area match per fire and scenario
   report <- data.frame(scn=NA, year=NA, fire.id=NA, area=NA, fst=NA, pct=NA, am=NA)
   for(scn in list.scn){
-    validation <- read.table(paste0("outputs/", scn, "/_Validation.txt"), header=T)
+    validation <- read.table(paste0("outputs/", scn, "/_AreaMatch.txt"), header=T)
     aux <- left_join(validation, ignitions, by=c("fire.id", "year")) %>%
            mutate(pctg=am/area*100) %>% group_by(scn, year, fire.id, area, fst) %>% 
           summarise(pct=round(mean(pctg),1), am=round(mean(am),1))

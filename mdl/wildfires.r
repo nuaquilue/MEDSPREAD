@@ -4,7 +4,7 @@
 ######################################################################################
 
 wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.intens.th, print.maps, 
-                      irun, pb.lower.th, pb.upper.th, fuel.opt, wwind, wslope){
+                      irun, pb.lower.th, pb.upper.th, fuel.opt, validation){
                         
   cat("Fires", "\n") 
   
@@ -12,7 +12,8 @@ wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.in
   `%notin%` <- Negate(`%in%`)
   
   ## To plot MAP of fire.ids and fire.step
-  MAP <- MASK
+  if(print.maps)
+    MAP <- MASK
   map <- data.frame(cell.id=land$cell.id, id=NA, step=NA)
   
   ## Read and load input data (això podria estar a land.dyn.mdl)
@@ -86,8 +87,8 @@ wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.in
       
     # ## According to the fire spread type, look at the weights of each factor on spread rate.
     # ## Any other parameter depends on the fire.spread.type ¿¿
-    # wwind <- fst.sprd.weight[1,fire.spread.type+1]
-    # wslope <- fst.sprd.weight[2,fire.spread.type+1]
+    wwind <- fst.sprd.weight[1,fire.spread.type+1]
+    wslope <- fst.sprd.weight[2,fire.spread.type+1]
 
     ## Controls of the fire shape
     ## Max number of cells in the fire front
@@ -264,9 +265,27 @@ wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.in
     MAP[!is.na(MASK[])] <- map$step
     writeRaster(MAP, paste0(out.path, "/FireStep_r", irun, "t", t, ".tif"), format="GTiff", overwrite=T)
   }
+  # Data frame with 
   save(map, file=paste0(out.path, "/Maps_r", irun, "t", t, ".rdata"))
   
+  ## Percentage burnt area per fst and per lct
+  if(validation & nrow(track.burnt.cells)>1){
+    burnt.lct <- filter(map, !is.na(id)) %>% left_join(land, by="cell.id") %>% 
+                 mutate(lct=ifelse(spp %in% c(1:4,8), "FC", ifelse(spp %in% c(5:7,9), "FD", ifelse(spp==10, "SH",
+                            ifelse(spp %in% c(11:13), "GC", "UR"))))) %>% left_join(fire.ignis, by=c("id"="fire.id")) %>% 
+                 group_by(fst, lct) %>% summarise(ab=length(lct)) 
+    # area burnt per fst and lct
+    ab.fst <- group_by(burnt.lct, fst) %>% summarise(tot=sum(ab)) 
+    ab.fst.lct <- group_by(burnt.lct, fst, lct) %>% summarise(ab=sum(ab)) %>% 
+                  left_join(ab.fst, by="fst") %>% mutate(pct=round(100*ab/tot,1)) %>% select(-tot)
+    # area burnt per lct
+    ab.lct <- group_by(burnt.lct, lct) %>% summarise(ab=sum(ab)) %>% mutate(pct=100*ab/sum(burnt.lct$ab))
+  }
+  else
+    ab.lct <- ab.fst.lct <- NA
+  
+  
   return(list(track.fire=track.fire[-1,], track.burnt.cells=track.burnt.cells[-1,], track.step=track.step[-1,],
-              track.sprd=track.sprd[-1,]))
+              track.sprd=track.sprd[-1,], ab.lct=ab.lct, ab.fst.lct=ab.fst.lct))
 }
 
