@@ -10,44 +10,44 @@ play <- function(){
   list.scn <- list.dirs(path=paste0(getwd(), "/outputs"), full.name=F, recursive=F); list.scn
   
   ## Auto-extinction
-  extinct <- self.extinguishing(list.scn)
+  extinct <- self.extinguishing(list.scn[-1])
   write.table(extinct, "rscripts/outs/extinct_33scn.txt", quote=F, row.names=F, sep="\t")
   
   ## Percentage burnt per land-cover type
-  lctburnt <- pct.lct.burnt(list.scn, 3) 
-  write.table(lctburnt[[1]], "rscripts/outs/error.pctburntlctfst_33scn.txt", quote=F, row.names=F, sep="\t")
-  write.table(lctburnt[[2]], "rscripts/outs/error.pctburntlct_33scn.txt", quote=F, row.names=F, sep="\t")
+  lctburnt <- pct.lct.burnt(list.scn[-1]) 
+  write.table(lctburnt[[2]], "rscripts/outs/error.pctburntlctfst_33scn.txt", quote=F, row.names=F, sep="\t")
+  write.table(lctburnt[[1]], "rscripts/outs/error.pctburntlct_33scn.txt", quote=F, row.names=F, sep="\t")
   
   ## Match area
-  report <- match.area(list.scn)
+  report <- match.area(list.scn[-1])
   write.table(report, "rscripts/outs/matcharea_33scn.txt", quote=F, row.names=F, sep="\t")
-  best.scn(report)
+  best <- best.scn(report)
+  write.table(best, "rscripts/outs/bestmatcharea_33scn.txt", quote=F, row.names=F, sep="\t")
   
-  ## Indagar
-  # a
-  noextinct <- filter(extinct, pctg.reach>=99, ab.at>95); noextinct
-  # b
-  b <-   lctburnt[[4]] %>% filter(scn %in% noextinct$scn)
-  # c
-  report.wind <- filter(report, fst==1) %>% filter(scn %in% noextinct$scn)
-  best.scn(report.wind)
-  report.topo <- filter(report, fst==2) %>% filter(scn %in% noextinct$scn)
-  best.scn(report.topo)
-  report.conv <- filter(report, fst==3) %>% filter(scn %in% noextinct$scn)
-  best.scn(report.conv)
+  ## Plot
+  
+  plot.fires(list.scn[23], 2, 24)
+  
 }
 
 
 
 #################################################### AUTO EXTINCTION ####################################################
 self.extinguishing <- function(list.scn){
-  result <- data.frame(scn=NA, pctg.reach=NA, ab.at=NA)
+  result <- data.frame(scn=NA, fst=NA, pctg.reach=NA, ab.at=NA)
   for(scn in list.scn){
     fires <- read.table(paste0("outputs/", scn, "/_Fires.txt"), header=T)
-    aux <- data.frame(scn=scn, 
-                      pctg.reach=round(100*sum(fires$aburnt.highintens+fires$aburnt.lowintens>=fires$atarget)/nrow(fires)),
-                      ab.at=round(100*sum(fires$aburnt.highintens+fires$aburnt.lowintens)/sum(fires$atarget)))
-    result <- rbind(result, aux)
+    # percentage of fires that have reach target area, per fst
+    nfires.fst <- group_by(fires, fst) %>% summarise(n=length(fst))
+    aux1 <- group_by(fires,fst) %>% summarise(pctg.reach=sum(pextra==0)) %>% 
+      left_join(nfires.fst, by="fst") %>% mutate(pctg.reach=100*pctg.reach/n) %>% 
+      select(-n)
+    # percentage of area effectively burnt over the target area
+    aux2 <- group_by(fires,fst) %>% 
+      summarise(ab=sum(aburnt.highintens+aburnt.lowintens), at=sum(atarget)) %>% 
+      mutate(ab.at=100*ab/at) %>% select(-ab, -at)
+    aux <- left_join(aux1, aux2, by="fst")  
+    result <- rbind(result, data.frame(scn=scn, aux))
   }
   return(result[-1,])
 }
@@ -68,19 +68,19 @@ pct.lct.burnt <- function(list.scn){
       left_join(ab.fst, by=c("scn", "fst")) %>% mutate(pct=100*ab/tot)
     dif.fst <- left_join(ab.fst.lct, select(obs.ab.fst.lct, fst, lct, pct), by=c("fst", "lct")) %>% group_by(scn, fst) %>% 
       summarize(err = sqrt(sum((pct.x-pct.y)^2)))
-    report.fst <- rbind(report.fst, dif.fst)
+    report.fst <- rbind(report.fst, as.data.frame(dif.fst))
     # Diference with observed 
     ab <- group_by(ab.fst.lct.year, scn) %>% summarise(tot=sum(ab))
     ab.lct <- group_by(ab.fst.lct.year, scn, lct) %>% summarise(ab=sum(ab)) %>% left_join(ab, by="scn") %>% 
       mutate(pct=100*ab/tot)
     dif <- left_join(ab.lct, select(obs.ab.lct, lct, pct), by="lct") %>% group_by(scn) %>% 
       summarize(err = sqrt(sum((pct.x-pct.y)^2)))
-    report <- rbind(report, dif)
+    report <- rbind(report, as.data.frame(dif))
   }
  
   report <- report[-1,]
   report.fst <- report.fst[-1,]
-  return(report=report, report.fst=report.fst)
+  return(list(report=report, report.fst=report.fst))
    
 }
 
@@ -156,16 +156,19 @@ best.scn <- function(report){
   ## Pctg of area match per scenario and fire.spread.type
   report.scn <- group_by(report, scn, fst) %>% summarise(min.match=min(pct), mn.match=mean(pct), 
                         md.match=median(pct), max.match=max(pct))
+  best <- data.frame(scn=NA,	fst=NA,	min.match=NA,	mn.match=NA,	md.match=NA,	max.match=NA)
   ## Best scn per fire spread type
   for(type in 1:3){
     fires <- filter(report.scn, fst==type)
     md.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(median=max(md.match))
     mn.fst <- filter(report.scn, fst==type) %>% group_by(fst) %>% summarise(mean=max(mn.match))
     # filter(report.scn, fst==type, mn.match==mn.fst$mean)
-    best <- fires[order(fires$mn.match, decreasing = T),]
+    aux <- fires[order(fires$md.match, decreasing = T),]
     print(ifelse(type==1, "Wind", ifelse(type==2, "Topo", "Convectiu")))
-    print(head(best,10))
+    print(head(aux,5))
+    best <- rbind(best, as.data.frame(aux))
   }
+  return(best[-1,])
 }
 
 doubt.fires <- function(report){
@@ -217,3 +220,22 @@ doubt.fires <- function(report){
   
 }
 
+
+######################################## PLOT ########################################
+plot.fires <- function(scn, irun, t){
+  # Mask
+  if(t<=11)
+    load("inputlyrs/rdata/mask.89-99.rdata")
+  else  
+    load("inputlyrs/rdata/mask.00-12.rdata")
+  # Map dataframe  
+  load(paste0("outputs/", scn, "/Maps_r", irun, "t", t, ".rdata"))
+  # fire.ids
+  MAP <- MASK
+  MAP[!is.na(MAP[])] <- map$id
+  writeRaster(MAP, paste0("outputs/", scn, "/FireIds_r", irun, "t", t, ".tif"), format="GTiff", overwrite=T)
+  ## fire.step
+  MAP <- MASK
+  MAP[!is.na(MAP[])] <- map$step
+  writeRaster(MAP, paste0("outputs/", scn, "/FireStep_r", irun, "t", t, ".tif"), format="GTiff", overwrite=T)
+}  

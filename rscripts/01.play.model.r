@@ -7,10 +7,10 @@ library(tidyverse)
 rm(list=ls())
 source("mdl/define.scenario.r"); source("mdl/land.dyn.mdl.r") 
 scenarios <- read_xlsx("Scenarios.xlsx", sheet="Obj5")
-for(i in 33){
+for(i in 23:33){
   scn.name <- scenarios$scn.name[i]
   define.scenario(scn.name)
-  nrun <- 3
+  nrun <- 5
   print.maps <- F
   validation <- T
   fuel.opt <- scenarios$fuel.opt[i]
@@ -18,7 +18,7 @@ for(i in 33){
   pb.upper.th <- scenarios$pb.upper.th[i]
   facc <- scenarios$facc[i]
   wwind <- scenarios$wwind[i]
-  wslope <- scenarios$slope[i]
+  wslope <- scenarios$wslope[i]
   dump(c("nrun", "fuel.opt", "rpb", "pb.upper.th", "facc", "wwind", "wslope", "validation", "print.maps"), 
        paste0("outputs/", scn.name, "/scn.custom.def.r"))
   land.dyn.mdl(scn.name)

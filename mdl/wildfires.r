@@ -4,7 +4,7 @@
 ######################################################################################
 
 wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.intens.th, print.maps, 
-                      irun, pb.lower.th, pb.upper.th, fuel.opt, validation){
+                      irun, pb.lower.th, pb.upper.th, fuel.opt, validation, wwind, wslope){
                         
   cat("Fires", "\n") 
   
@@ -87,8 +87,8 @@ wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.in
       
     # ## According to the fire spread type, look at the weights of each factor on spread rate.
     # ## Any other parameter depends on the fire.spread.type ¿¿
-    wwind <- fst.sprd.weight[1,fire.spread.type+1]
-    wslope <- fst.sprd.weight[2,fire.spread.type+1]
+    # wwind <- fst.sprd.weight[1,fire.spread.type+1]
+    # wslope <- fst.sprd.weight[2,fire.spread.type+1]
 
     ## Controls of the fire shape
     ## Max number of cells in the fire front
