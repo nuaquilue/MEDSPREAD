@@ -18,7 +18,7 @@ wildfires <- function(land, ignis, coord, orography, t, MASK, facc, rpb, fire.in
   
   ## Read and load input data (això podria estar a land.dyn.mdl)
   fire.ignis <- read.table(paste0("inputfiles/", file.fire.ignis, ".txt"), header=T)
-  fst.sprd.weight <- read.table(paste0("inputfiles/", file.sprd.weight, ".txt"), header=T)
+  # fst.sprd.weight <- read.table(paste0("inputfiles/", file.sprd.weight, ".txt"), header=T)
   spp.ages <- read.table("inputfiles/SppAges.txt", header=T)
   shrub.fuel <- read.table("inputfiles/ShrubFuel.txt", header=T)
   
