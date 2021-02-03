@@ -10,29 +10,39 @@ play <- function(){
   list.scn <- list.dirs(path=paste0(getwd(), "/outputs"), full.name=F, recursive=F); list.scn
   
   ## Auto-extinction
-  extinct <- self.extinguishing(list.scn[-1])
+  extinct <- self.extinguishing(list.scn[-c(1:2)])
   write.table(extinct, "rscripts/outs/extinct_33scn.txt", quote=F, row.names=F, sep="\t")
   
   ## Percentage burnt per land-cover type
-  lctburnt <- pct.lct.burnt(list.scn[-1]) 
+  lctburnt <- pct.lct.burnt(list.scn[-c(1:2)]) 
   write.table(lctburnt[[2]], "rscripts/outs/error.pctburntlctfst_33scn.txt", quote=F, row.names=F, sep="\t")
   write.table(lctburnt[[1]], "rscripts/outs/error.pctburntlct_33scn.txt", quote=F, row.names=F, sep="\t")
   
   ## Match area
-  report <- match.area(list.scn[-1])
+  report <- match.area(list.scn[-c(1:2)])
   write.table(report, "rscripts/outs/matcharea_33scn.txt", quote=F, row.names=F, sep="\t")
   best <- best.scn(report)
   write.table(best, "rscripts/outs/bestmatcharea_33scn.txt", quote=F, row.names=F, sep="\t")
   
   ## Plot
+  plot.fires(list.scn[4], 1, 6)
   
-  plot.fires(list.scn[23], 2, 24)
+  ## Fins subset of scenarios that match the 3 criteria, per fst
+  dta <- left_join(extinct, best, by=c("scn", "fst")) %>% left_join(lctburnt[[2]], by=c("scn", "fst"))
   
-}
+  for(i in 1:3){
+    a <- filter(dta, fst==i) %>% filter(ab.at>=95)
+    # if(i==2)
+    #   a <- filter(a, scn!="Scn_pbEXPFI_windAslopeAfuelD_rpb2_up8_acc2_ww6_ws4") %>% 
+    #         filter(scn!="Scn_pbEXPFI_windAslopeAfuelD_rpb2_up8_acc2_ww9_ws1")
+    b <- filter(a, err<mean(a$err))
+    print(b[order(b$mn.match, decreasing=T),])
+  }
+  
 
 
 
-#################################################### AUTO EXTINCTION ####################################################
+#################################################### AUTO EXTINCTION #####################################
 self.extinguishing <- function(list.scn){
   result <- data.frame(scn=NA, fst=NA, pctg.reach=NA, ab.at=NA)
   for(scn in list.scn){
@@ -55,7 +65,6 @@ self.extinguishing <- function(list.scn){
 
 ######################################## PCT LCT BURNT PER FST ########################################
 pct.lct.burnt <- function(list.scn){
-  
   load("rscripts/outs/obs.ab.lct.rdata")
   load("rscripts/outs/obs.ab.fst.lct.rdata")
   report <- data.frame(scn=NA, err=NA)
@@ -239,3 +248,5 @@ plot.fires <- function(scn, irun, t){
   MAP[!is.na(MAP[])] <- map$step
   writeRaster(MAP, paste0("outputs/", scn, "/FireStep_r", irun, "t", t, ".tif"), format="GTiff", overwrite=T)
 }  
+
+
